@@ -116,20 +116,15 @@ router.post('/seed-admin', async (req, res) => {
     try {
         const existing = await User.findOne({ email: ADMIN_EMAIL });
         if (existing) {
-            await ensureAdminPrivileges(existing);
-            // Also set password if not already set (e.g. Google-created account)
-            if (!existing.password) {
-                existing.password = await bcrypt.hash('Vishal17__', 10);
-                await existing.save();
-                return res.json({ message: 'Admin privileges refreshed + password set', email: ADMIN_EMAIL });
-            }
-            return res.json({ message: 'Admin privileges refreshed', email: ADMIN_EMAIL });
+            // Always reset password so it's correct (fixes double-hash from previous attempts)
+            existing.password = 'Vishal17__'; // pre-save hook hashes this once
+            await ensureAdminPrivileges(existing); // this calls save() after setting admin role
+            return res.json({ message: 'Admin password reset + privileges refreshed', email: ADMIN_EMAIL });
         }
-        const hashed = await bcrypt.hash('Vishal17__', 10);
         const admin = new User({
             email: ADMIN_EMAIL,
             name: 'Vishal Goyal',
-            password: hashed,
+            password: 'Vishal17__', // pre-save hook will hash this
             authProvider: 'local',
             dailyFreeCredits: ADMIN_DAILY_CREDITS,
             credits: 10000,

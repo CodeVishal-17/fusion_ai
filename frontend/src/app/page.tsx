@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import ResponseCard from "@/components/ResponseCard";
@@ -423,13 +423,13 @@ export default function Home() {
                     <Download className="w-3.5 h-3.5" /> Export
                 </button>
             )}
-            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform">
+            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="hidden sm:flex p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform">
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <button onClick={() => router.push("/profile")} className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform group">
+            <button onClick={() => router.push("/profile")} className="hidden sm:flex p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform group">
                 <User className="w-4 h-4 text-neutral-500 group-hover:text-blue-500 transition-colors" />
             </button>
-            <button onClick={logout} className="p-2.5 rounded-xl border border-black/10 dark:border-white/10 hover:bg-red-500/10 hover:text-red-500 transition-all">
+            <button onClick={logout} className="hidden sm:flex p-2.5 rounded-xl border border-black/10 dark:border-white/10 hover:bg-red-500/10 hover:text-red-500 transition-all">
                 <LogOut className="w-4 h-4" />
             </button>
           </div>

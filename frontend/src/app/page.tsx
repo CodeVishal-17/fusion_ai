@@ -733,9 +733,9 @@ export default function Home() {
                                       <span className="w-2 h-2 rounded-full bg-violet-500" />
                                       <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">{model.toUpperCase()} says</span>
                                     </div>
-                                    <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                                      {debateResults[model].text}
-                                    </ReactMarkdown>
+                                     <div className="prose prose-sm dark:prose-invert max-w-none text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                       <ReactMarkdown>{debateResults[model].text}</ReactMarkdown>
+                                     </div>
                                   </div>
                                 ))}
                               </div>

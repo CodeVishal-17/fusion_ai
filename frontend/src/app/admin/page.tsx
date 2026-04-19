@@ -25,9 +25,18 @@ export default function AdminDashboard() {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
 
     useEffect(() => {
-        const userData = typeof window !== "undefined" ? localStorage.getItem("userData") : null;
-        const user = userData ? JSON.parse(userData) : null;
-        if (!user || user.email !== ADMIN_EMAIL) {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const rawUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        
+        if (!token || !rawUser) {
+            router.push("/login");
+            return;
+        }
+        
+        const user = JSON.parse(rawUser);
+        // Allow if email matches OR role/plan is admin
+        const isAdmin = user.email === ADMIN_EMAIL || user.role === 'admin' || user.plan === 'admin';
+        if (!isAdmin) {
             router.push("/");
             return;
         }

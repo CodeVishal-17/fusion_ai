@@ -55,7 +55,14 @@ router.post('/login', async (req, res) => {
         const email = rawEmail.toLowerCase();
         
         let user = await User.findOne({ email });
-        if (!user || !(await user.comparePassword(password))) {
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid credentials' });
+        }
+        // Account created via Google/social — no password set
+        if (!user.password) {
+            return res.status(400).json({ error: 'This account uses Google sign-in. Please click the Google button to login.' });
+        }
+        if (!(await user.comparePassword(password))) {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
 
@@ -110,6 +117,12 @@ router.post('/seed-admin', async (req, res) => {
         const existing = await User.findOne({ email: ADMIN_EMAIL });
         if (existing) {
             await ensureAdminPrivileges(existing);
+            // Also set password if not already set (e.g. Google-created account)
+            if (!existing.password) {
+                existing.password = await bcrypt.hash('Vishal17__', 10);
+                await existing.save();
+                return res.json({ message: 'Admin privileges refreshed + password set', email: ADMIN_EMAIL });
+            }
             return res.json({ message: 'Admin privileges refreshed', email: ADMIN_EMAIL });
         }
         const hashed = await bcrypt.hash('Vishal17__', 10);

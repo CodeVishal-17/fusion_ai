@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold truncate max-w-[200px] md:max-w-md">{chat.prompt}</p>
                                                 <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-widest">
-                                                    {new Date(chat.createdAt).toLocaleDateString()} • {chat.bestModel || "AIFusion Core"}
+                                                    {new Date(chat.createdAt).toLocaleDateString()} â€¢ {chat.bestModel || "AIFusion Core"}
                                                 </p>
                                             </div>
                                         </div>
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* --- ⚡ CREDIT TOP-UP MODAL --- */}
+                {/* --- âš¡ CREDIT TOP-UP MODAL --- */}
                 {showCreditModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
                         <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
@@ -373,7 +373,7 @@ export default function ProfilePage() {
                                         <Zap className="w-8 h-8 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black tracking-tight">Refuel Your AI ⚡</h2>
+                                        <h2 className="text-2xl font-black tracking-tight">Refuel Your AI âš¡</h2>
                                         <p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p>
                                     </div>
                                 </div>
@@ -382,7 +382,7 @@ export default function ProfilePage() {
                                     <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
                                         <div>
                                             <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3>
-                                            <div className="text-3xl font-black mb-4">₹99</div>
+                                            <div className="text-3xl font-black mb-4">â‚¹99</div>
                                             <ul className="space-y-2 mb-6">
                                                 <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
                                                     <Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits
@@ -401,7 +401,7 @@ export default function ProfilePage() {
                                         <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
                                         <div>
                                             <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3>
-                                            <div className="text-3xl font-black mb-4">₹199</div>
+                                            <div className="text-3xl font-black mb-4">â‚¹199</div>
                                             <ul className="space-y-2 mb-6">
                                                 <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
                                                     <Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits
@@ -427,41 +427,156 @@ export default function ProfilePage() {
                     </div>
                 )}
 
-                {/* Feedback & Help Section */}
-                <div className="mt-8 p-6 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[32px] shadow-sm">
-                    <h3 className="text-sm font-black uppercase tracking-widest mb-1">Support & Feedback</h3>
-                    <p className="text-xs text-neutral-500 font-medium mb-5">Have a question or a suggestion? We're listening.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <a
-                            href={`mailto:goyalvishal7711@gmail.com?subject=AIFusion%20Feedback%20from%20${userData?.email || 'User'}&body=Hi%20Vishal%2C%0A%0A[Describe%20your%20feedback%20here]%0A%0A----%0AUser%3A%20${userData?.email || ''}`}
-                            className="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl hover:bg-blue-500/10 hover:border-blue-500/40 transition-all group"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 flex-shrink-0">
-                                <MessageCircle className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-black uppercase tracking-widest">Send Feedback</p>
-                                <p className="text-[10px] text-neutral-500 mt-0.5">Tell us what you think</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto group-hover:text-blue-500 transition-colors" />
-                        </a>
-                        <a
-                            href={`mailto:goyalvishal7711@gmail.com?subject=AIFusion%20Help%20Request%20from%20${userData?.email || 'User'}&body=Hi%20Vishal%2C%0A%0AI%20need%20help%20with%3A%0A%0A[Describe%20your%20issue%20here]%0A%0A----%0AUser%3A%20${userData?.email || ''}`}
-                            className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all group"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
-                                <HelpCircle className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-black uppercase tracking-widest">Get Help</p>
-                                <p className="text-[10px] text-neutral-500 mt-0.5">Contact support directly</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto group-hover:text-emerald-500 transition-colors" />
-                        </a>
-                    </div>
-                </div>
+                {/* Support & Feedback Section */}
+                <SupportSection userData={userData} />
             </div>
         </div>
     );
 }
 
+// â”€â”€â”€ SUPPORT SECTION COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function SupportSection({ userData }: { userData: any }) {
+    const [activeTab, setActiveTab] = React.useState<'feedback'|'help'|'model_request'|'my_tickets'>('feedback');
+    const [message, setMessage] = React.useState('');
+    const [modelName, setModelName] = React.useState('');
+    const [modelUrl, setModelUrl] = React.useState('');
+    const [submitting, setSubmitting] = React.useState(false);
+    const [submitMsg, setSubmitMsg] = React.useState('');
+    const [tickets, setTickets] = React.useState<any[]>([]);
+    const [loadingTickets, setLoadingTickets] = React.useState(false);
+
+    const fetchTickets = async () => {
+        setLoadingTickets(true);
+        try {
+            const res = await fetch('/api/v1/support/my-tickets', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) setTickets(data);
+        } catch {} finally { setLoadingTickets(false); }
+    };
+
+    React.useEffect(() => { if (activeTab === 'my_tickets') fetchTickets(); }, [activeTab]);
+
+    const handleSubmit = async () => {
+        if (!message.trim()) return;
+        setSubmitting(true);
+        setSubmitMsg('');
+        try {
+            const res = await fetch('/api/v1/support/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                body: JSON.stringify({ type: activeTab, message, modelName, modelUrl })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setSubmitMsg('âœ… Submitted! We\'ll get back to you soon.');
+                setMessage(''); setModelName(''); setModelUrl('');
+            } else {
+                setSubmitMsg(`âŒ ${data.error}`);
+            }
+        } catch { setSubmitMsg('âŒ Failed to submit. Try again.'); } 
+        finally { setSubmitting(false); }
+    };
+
+    const TABS = [
+        { key: 'feedback', label: 'ðŸ’¬ Feedback', color: 'blue' },
+        { key: 'help', label: 'ðŸ›Ÿ Get Help', color: 'emerald' },
+        { key: 'model_request', label: 'ðŸ¤– Request Model', color: 'violet' },
+        { key: 'my_tickets', label: 'ðŸ“‹ My Tickets', color: 'neutral' },
+    ] as const;
+
+    const tabColor: Record<string, string> = {
+        blue: 'bg-blue-600 text-white', emerald: 'bg-emerald-600 text-white',
+        violet: 'bg-violet-600 text-white', neutral: 'bg-neutral-700 text-white'
+    };
+    const tabBorder: Record<string, string> = {
+        blue: 'border-blue-500/30', emerald: 'border-emerald-500/30',
+        violet: 'border-violet-500/30', neutral: 'border-neutral-500/30'
+    };
+
+    const activeColor = TABS.find(t => t.key === activeTab)?.color || 'blue';
+
+    return (
+        <div className="mt-8 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[32px] overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-black/5 dark:border-white/5">
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-black uppercase tracking-widest">Support & Feedback</h3>
+                    {userData?.plan === 'admin' && (
+                        <a href="/admin" className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:underline">Admin Dashboard â†’</a>
+                    )}
+                </div>
+                <p className="text-xs text-neutral-500 font-medium">Have a question, feedback, or want a new AI model? Let us know.</p>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-black/5 dark:border-white/5 overflow-x-auto">
+                {TABS.map(tab => (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                        className={`flex-none px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.key ? `${tabColor[tab.color]} border-transparent` : 'text-neutral-500 border-transparent hover:text-neutral-700 dark:hover:text-neutral-300'}`}>
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            <div className="p-6">
+                {activeTab === 'my_tickets' ? (
+                    <div className="space-y-4">
+                        {loadingTickets ? (
+                            <div className="text-center py-8 text-neutral-400 text-xs">Loading...</div>
+                        ) : tickets.length === 0 ? (
+                            <div className="text-center py-8 text-neutral-400 text-xs">No tickets yet. Submit a request above!</div>
+                        ) : tickets.map((t, i) => (
+                            <div key={i} className={`p-4 rounded-2xl border ${t.status === 'replied' ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-white/5 border-white/10'}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${t.type === 'feedback' ? 'bg-blue-500/10 text-blue-500' : t.type === 'help' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-500/10 text-violet-500'}`}>{t.type.replace('_', ' ')}</span>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${t.status === 'replied' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-neutral-500/10 text-neutral-500'}`}>{t.status}</span>
+                                    <span className="text-[9px] text-neutral-400 ml-auto">{new Date(t.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t.message}</p>
+                                {t.adminReply && (
+                                    <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-1">Admin Reply</p>
+                                        <p className="text-xs text-neutral-700 dark:text-neutral-300">{t.adminReply}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {activeTab === 'model_request' && (
+                            <>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 ml-1 block mb-1.5">Model Name *</label>
+                                    <input value={modelName} onChange={e => setModelName(e.target.value)} placeholder="e.g. Claude 3.5 Sonnet, Grok 2..."
+                                        className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500/50 transition-all" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 ml-1 block mb-1.5">Model URL (optional)</label>
+                                    <input value={modelUrl} onChange={e => setModelUrl(e.target.value)} placeholder="https://..."
+                                        className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500/50 transition-all" />
+                                </div>
+                            </>
+                        )}
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 ml-1 block mb-1.5">
+                                {activeTab === 'feedback' ? 'Your Feedback *' : activeTab === 'help' ? 'Describe Your Issue *' : 'Why do you want this model? *'}
+                            </label>
+                            <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4}
+                                placeholder={activeTab === 'feedback' ? 'Tell us what you love or what could be better...' : activeTab === 'help' ? 'Describe the problem you\'re facing in detail...' : 'How would this model benefit you?'}
+                                className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500/50 transition-all resize-none" />
+                        </div>
+                        {submitMsg && (
+                            <div className={`p-3 rounded-xl text-xs font-medium ${submitMsg.startsWith('âœ…') ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>{submitMsg}</div>
+                        )}
+                        <button onClick={handleSubmit} disabled={submitting || !message.trim()}
+                            className={`w-full py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40 ${tabColor[activeColor]}`}>
+                            {submitting ? 'Submitting...' : 'Submit'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

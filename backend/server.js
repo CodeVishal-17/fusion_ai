@@ -65,6 +65,8 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/user', require('./routes/user'));
 app.use('/api/v1/payment', require('./routes/payment'));
+app.use('/api/v1/support', require('./routes/support'));
+app.use('/api/support', require('./routes/support'));
 
 app.get('/api/test', (req, res) => res.json({ status: 'ok', database: mongoose.connection.readyState === 1 }));
 app.get('/api/v1/test', (req, res) => res.json({ status: 'ok', v1: true }));

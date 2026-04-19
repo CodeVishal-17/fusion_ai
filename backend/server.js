@@ -21,7 +21,9 @@ const Usage = require('./models/Usage');
 const app = express();
 const allowedOrigins = [
     'http://localhost:3000',
-    process.env.FRONTEND_URL // To be set in production (e.g., your-app.vercel.app)
+    'http://127.0.0.1:3000',
+    'https://fusion-ai-ten.vercel.app',
+    process.env.FRONTEND_URL
 ];
 
 app.use(cors({
@@ -57,7 +59,13 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/payment', require('./routes/payment'));
 
+// v1 Support
+app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/user', require('./routes/user'));
+app.use('/api/v1/payment', require('./routes/payment'));
+
 app.get('/api/test', (req, res) => res.json({ status: 'ok', database: mongoose.connection.readyState === 1 }));
+app.get('/api/v1/test', (req, res) => res.json({ status: 'ok', v1: true }));
 
 const MODEL_COSTS = {
     openai: 5,

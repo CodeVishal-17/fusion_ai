@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2, ArrowRight, Github } from "lucide-react";
+import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2, ArrowRight } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 
 export default function LoginPage() {
@@ -209,7 +209,7 @@ export default function LoginPage() {
                         className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-violet-500/30 transition-all group overflow-hidden relative"
                     >
                         <div className="absolute inset-0 bg-violet-600/0 group-hover:bg-violet-600/5 transition-colors" />
-                        <Github className="w-5 h-5 text-violet-500" />
+                        <Layout className="w-5 h-5 text-violet-500" />
                         <span className="text-[10px] font-black uppercase tracking-widest">GitHub</span>
                     </button>
                 </div>

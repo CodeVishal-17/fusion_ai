@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import ResponseCard from "@/components/ResponseCard";
+import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock } from "lucide-react";

@@ -331,10 +331,9 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
 });
 
 // AI Debate Mode: each model critiques the others' responses
-app.post('/api/debate', authMiddleware, billingMiddleware, async (req, res) => {
+const handleDebateRequest = async (req, res) => {
     try {
         const { responses, originalPrompt } = req.body;
-        // responses: { openai: "...", deepseek: "...", meta: "...", gemini: "..." }
         if (!responses || !originalPrompt) return res.status(400).json({ error: 'Missing responses or prompt' });
 
         const modelNames = { openai: 'GPT-4o (OpenAI)', deepseek: 'DeepSeek', meta: 'Llama (Meta)', gemini: 'Gemini (Google)' };
@@ -364,8 +363,8 @@ app.post('/api/debate', authMiddleware, billingMiddleware, async (req, res) => {
         const debateResults = {};
         debateRound.forEach(({ model, text, status }) => { debateResults[model] = { text, status }; });
 
-        // Deduct credits (half cost for debate round)
-        const totalCost = 8; // flat cost for a debate round
+        // Deduct credits (flat cost for debate round)
+        const totalCost = 8;
         let user = req.user;
         if (user.dailyFreeCredits >= totalCost) { user.dailyFreeCredits -= totalCost; }
         else { const rem = totalCost - user.dailyFreeCredits; user.dailyFreeCredits = 0; user.credits = Math.max(0, user.credits - rem); }
@@ -376,8 +375,10 @@ app.post('/api/debate', authMiddleware, billingMiddleware, async (req, res) => {
         console.error('Debate Error:', e);
         return res.status(500).json({ error: e.message });
     }
-});
-app.post('/api/v1/debate', authMiddleware, billingMiddleware, async (req, res) => req.app._router.handle({ ...req, url: '/api/debate', path: '/api/debate' }, res));
+};
+
+app.post('/api/debate',    authMiddleware, billingMiddleware, handleDebateRequest);
+app.post('/api/v1/debate', authMiddleware, billingMiddleware, handleDebateRequest);
 
 app.post('/api/improve-prompt', authMiddleware, async (req, res) => {
     try {

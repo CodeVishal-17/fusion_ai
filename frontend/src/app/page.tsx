@@ -142,7 +142,7 @@ export default function Home() {
         const last = history[m]?.findLast((msg: any) => msg.role === 'assistant');
         if (last) responses[m] = last.content as string;
       });
-      const res = await fetch('/api/debate', {
+      const res = await fetch('/api/v1/debate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ responses, originalPrompt: lastPrompt })

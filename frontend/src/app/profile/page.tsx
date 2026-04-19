@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 import { 
   User, Mail, Shield, Coins, ArrowLeft, LogOut, 
   Zap, ChevronRight, CreditCard, Sparkles, Clock, Settings,
-  Edit2, Check, X, Loader2, MessageSquare
+  Edit2, Check, X, Loader2, MessageSquare, HelpCircle, MessageCircle, Image
 } from "lucide-react";
 import Link from "next/link";
 
@@ -426,7 +426,42 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 )}
+
+                {/* Feedback & Help Section */}
+                <div className="mt-8 p-6 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[32px] shadow-sm">
+                    <h3 className="text-sm font-black uppercase tracking-widest mb-1">Support & Feedback</h3>
+                    <p className="text-xs text-neutral-500 font-medium mb-5">Have a question or a suggestion? We're listening.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <a
+                            href={`mailto:goyalvishal7711@gmail.com?subject=AIFusion%20Feedback%20from%20${userData?.email || 'User'}&body=Hi%20Vishal%2C%0A%0A[Describe%20your%20feedback%20here]%0A%0A----%0AUser%3A%20${userData?.email || ''}`}
+                            className="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl hover:bg-blue-500/10 hover:border-blue-500/40 transition-all group"
+                        >
+                            <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 flex-shrink-0">
+                                <MessageCircle className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest">Send Feedback</p>
+                                <p className="text-[10px] text-neutral-500 mt-0.5">Tell us what you think</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto group-hover:text-blue-500 transition-colors" />
+                        </a>
+                        <a
+                            href={`mailto:goyalvishal7711@gmail.com?subject=AIFusion%20Help%20Request%20from%20${userData?.email || 'User'}&body=Hi%20Vishal%2C%0A%0AI%20need%20help%20with%3A%0A%0A[Describe%20your%20issue%20here]%0A%0A----%0AUser%3A%20${userData?.email || ''}`}
+                            className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all group"
+                        >
+                            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
+                                <HelpCircle className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest">Get Help</p>
+                                <p className="text-[10px] text-neutral-500 mt-0.5">Contact support directly</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto group-hover:text-emerald-500 transition-colors" />
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
+

@@ -225,7 +225,7 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                         <div className="my-4 overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 shadow-2xl group/img relative">
                             <img {...props} className="w-full h-auto object-cover max-h-[600px] hover:scale-[1.02] transition-transform duration-700" alt="Generated AI" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
-                                <a href={props.src} target="_blank" download className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/20 hover:bg-white/20 transition-all">
+                                <a href={props.src as string} target="_blank" download className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/20 hover:bg-white/20 transition-all">
                                     <Download className="w-3 h-3" /> Save to Neural Core
                                 </a>
                             </div>

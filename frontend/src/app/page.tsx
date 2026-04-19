@@ -314,6 +314,9 @@ export default function Home() {
               </div>
               
               <div className="flex items-center gap-2 sm:hidden">
+                <button onClick={() => router.push("/profile")} className="p-2 rounded-lg bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-500">
+                    <User className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg bg-white dark:bg-white/5 border border-black/10 dark:border-white/10">
                     {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
                 </button>

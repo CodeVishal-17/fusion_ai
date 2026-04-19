@@ -461,14 +461,37 @@ export default function Home() {
           ) : (
               <div className="h-full overflow-y-auto custom-scrollbar px-6 py-8 pb-40">
                   <div className="max-w-[1600px] mx-auto">
+                    {/* --- 🧠 CONSENSUS ANALYSIS (Real-time Summary) --- */}
                     {analysis && (
-                        <div className="mb-8 p-8 rounded-[40px] bg-white dark:bg-[#0c0c0c] border border-neutral-200 dark:border-white/10 shadow-2xl relative overflow-hidden group/summary">
-                            <div className="flex items-center gap-3 mb-6">
-                                 <Sparkles className="w-6 h-6 text-blue-500" />
-                                 <h3 className="text-xl font-black italic">Consensus Analysis</h3>
+                      <div className="max-w-[98%] mx-auto mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="bg-white/80 dark:bg-white/5 backdrop-blur-2xl border border-blue-500/20 rounded-[32px] p-5 sm:p-8 shadow-2xl shadow-blue-500/5 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full -mr-32 -mt-32" />
+                            
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-8 h-8 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20">
+                                        <Sparkles className="w-4 h-4 animate-pulse" />
+                                    </div>
+                                    <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-blue-600/80">Neural Consensus Analysis</h3>
+                                </div>
+                                
+                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-300 font-medium leading-relaxed">
+                                        {analysis.consensus || analysis}
+                                    </p>
+                                </div>
+
+                                {analysis.bestModel && (
+                                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 flex items-center gap-2">
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Synthesis Winner:</span>
+                                         <span className="px-2 py-1 rounded-md bg-blue-600/10 text-blue-600 text-[10px] font-black uppercase tracking-tighter border border-blue-600/20">
+                                            {analysis.bestModel}
+                                         </span>
+                                    </div>
+                                )}
                             </div>
-                            <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 font-medium">{analysis.consensus}</p>
                         </div>
+                      </div>
                     )}
 
                     {/* Global Multi-File Preview (Optional, can keep it only inside input) */}

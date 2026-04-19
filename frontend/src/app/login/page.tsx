@@ -6,7 +6,7 @@ import Link from "next/link";
 import { 
   Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, 
   Cpu, Shield, Globe, Loader2, ArrowRight, Mail, 
-  Command, Box, Activity, Layers, Terminal, Layout
+  Command, Box, Activity, Layers, Terminal
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 

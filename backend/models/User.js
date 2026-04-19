@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     oauthId: { type: String },
     plan: { type: String, enum: ['free', 'pro', 'admin'], default: 'free' },
     credits: { type: Number, default: 50 },
-    dailyFreeCredits: { type: Number, default: 20 },
+    dailyFreeCredits: { type: Number, default: 70 },
     lastResetDate: { type: Date, default: Date.now },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     subscriptionExpires: { type: Date },

@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
@@ -34,7 +34,7 @@ router.post('/signup', async (req, res) => {
         const user = new User({ 
             email, 
             password,
-            dailyFreeCredits: isAdmin ? ADMIN_DAILY_CREDITS : 20,
+            dailyFreeCredits: isAdmin ? ADMIN_DAILY_CREDITS : 70,
             credits: isAdmin ? 10000 : 0,
             plan: isAdmin ? 'admin' : 'free',
             role: isAdmin ? 'admin' : 'user'
@@ -83,8 +83,8 @@ router.post('/social-login', async (req, res) => {
                 name: name || (isSimulation ? `Tester_${authProvider}` : 'Social User'), 
                 authProvider, 
                 oauthId: oauthId || (isSimulation ? `sim_${Date.now()}` : null),
-                credits: isAdmin ? 10000 : 50,
-                dailyFreeCredits: isAdmin ? ADMIN_DAILY_CREDITS : 20,
+                credits: isAdmin ? 10000 : 0,
+                dailyFreeCredits: isAdmin ? ADMIN_DAILY_CREDITS : 70,
                 plan: isAdmin ? 'admin' : 'free',
                 role: isAdmin ? 'admin' : 'user'
             });

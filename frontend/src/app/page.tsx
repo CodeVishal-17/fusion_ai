@@ -5,7 +5,7 @@ import ResponseCard from "@/components/ResponseCard";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle } from "lucide-react";
+import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export type Message = {
@@ -92,6 +92,29 @@ export default function Home() {
   const [searchMode, setSearchMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [showModelRequestModal, setShowModelRequestModal] = useState(false);
+  const [modelReqName, setModelReqName] = useState('');
+  const [modelReqMsg, setModelReqMsg] = useState('');
+  const [modelReqStatus, setModelReqStatus] = useState('');
+  const [modelReqLoading, setModelReqLoading] = useState(false);
+
+  const submitModelRequest = async () => {
+    if (!modelReqName.trim() || !modelReqMsg.trim()) return;
+    setModelReqLoading(true);
+    try {
+      const res = await fetch('/api/v1/support/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ type: 'model_request', message: modelReqMsg, modelName: modelReqName })
+      });
+      if (res.ok) {
+        setModelReqStatus('success');
+        setModelReqName(''); setModelReqMsg('');
+        setTimeout(() => { setShowModelRequestModal(false); setModelReqStatus(''); }, 2000);
+      } else { setModelReqStatus('error'); }
+    } catch { setModelReqStatus('error'); }
+    finally { setModelReqLoading(false); }
+  };
 
   const startNewChat = () => {
     setHistory({ openai: [], deepseek: [], meta: [], gemini: [] });
@@ -413,24 +436,27 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-3">
+            <button onClick={() => setShowModelRequestModal(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-violet-500/10 text-violet-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-500/20 transition-all border border-violet-500/20">
+              <Cpu className="w-3.5 h-3.5" /> Request Model
+            </button>
             {hasStartedChat && (
               <button onClick={startNewChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-neutral-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-200 dark:hover:bg-white/10 transition-all">
                 <Plus className="w-3.5 h-3.5" /> New Chat
               </button>
             )}
             {hasStartedChat && (
-                <button onClick={handleDownloadChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">
-                    <Download className="w-3.5 h-3.5" /> Export
-                </button>
+              <button onClick={handleDownloadChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">
+                <Download className="w-3.5 h-3.5" /> Export
+              </button>
             )}
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="hidden sm:flex p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform">
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
             <button onClick={() => router.push("/profile")} className="hidden sm:flex p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform group">
-                <User className="w-4 h-4 text-neutral-500 group-hover:text-blue-500 transition-colors" />
+              <User className="w-4 h-4 text-neutral-500 group-hover:text-blue-500 transition-colors" />
             </button>
             <button onClick={logout} className="hidden sm:flex p-2.5 rounded-xl border border-black/10 dark:border-white/10 hover:bg-red-500/10 hover:text-red-500 transition-all">
-                <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -768,12 +794,12 @@ export default function Home() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
-                            <div><h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3><div className="text-3xl font-black mb-4">â‚¹99</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup</li></ul></div>
+                            <div><h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3><div className="text-3xl font-black mb-4">Rs.99</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup</li></ul></div>
                             <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">Get Credits</button>
                         </div>
                         <div className="p-6 rounded-3xl bg-blue-600/5 dark:bg-blue-600/10 border-2 border-blue-600/30 flex flex-col justify-between relative group">
                             <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
-                            <div><h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3><div className="text-3xl font-black mb-4">â‚¹199</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> Priority Support</li></ul></div>
+                            <div><h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3><div className="text-3xl font-black mb-4">Rs.199</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> Priority Support</li></ul></div>
                             <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Go Pro Now</button>
                         </div>
                     </div>
@@ -782,7 +808,51 @@ export default function Home() {
             </div>
         </div>
       )}
+
+      {/* Model Request Modal */}
+      {showModelRequestModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-md rounded-[32px] border border-black/5 dark:border-white/10 shadow-2xl relative overflow-hidden">
+            <button onClick={() => { setShowModelRequestModal(false); setModelReqStatus(''); }} className="absolute top-5 right-5 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"><X className="w-4 h-4" /></button>
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-violet-600 rounded-2xl flex items-center justify-center"><Cpu className="w-5 h-5 text-white" /></div>
+                <div>
+                  <h2 className="text-lg font-black tracking-tight">Request a Model</h2>
+                  <p className="text-neutral-500 text-xs">Tell us which AI model you want added</p>
+                </div>
+              </div>
+              {modelReqStatus === 'success' ? (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3"><MessageCircle className="w-7 h-7 text-emerald-500" /></div>
+                  <p className="font-black text-sm uppercase tracking-widest text-emerald-500">Request Sent!</p>
+                  <p className="text-xs text-neutral-500 mt-1">We will review and add it soon.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1.5">Model Name *</label>
+                    <input value={modelReqName} onChange={e => setModelReqName(e.target.value)} placeholder="e.g. Claude 3.5 Sonnet, Grok 2, Mistral..."
+                      className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-violet-500/40 transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1.5">Why do you want it? *</label>
+                    <textarea value={modelReqMsg} onChange={e => setModelReqMsg(e.target.value)} rows={3} placeholder="How would this model help you?"
+                      className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-violet-500/40 transition-all resize-none" />
+                  </div>
+                  {modelReqStatus === 'error' && <p className="text-xs text-red-500">Failed to submit. Please try again.</p>}
+                  <button onClick={submitModelRequest} disabled={modelReqLoading || !modelReqName.trim() || !modelReqMsg.trim()}
+                    className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40">
+                    {modelReqLoading ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
 }
+

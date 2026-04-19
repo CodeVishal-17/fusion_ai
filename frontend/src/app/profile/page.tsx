@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,7 +6,8 @@ import { signOut } from "next-auth/react";
 import { 
   User, Mail, Shield, Coins, ArrowLeft, LogOut, 
   Zap, ChevronRight, CreditCard, Sparkles, Clock, Settings,
-  Edit2, Check, X, Loader2, MessageSquare, HelpCircle, MessageCircle, Image
+  Edit2, Check, X, Loader2, MessageSquare, HelpCircle, MessageCircle,
+  Image, Cpu, ClipboardList, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 
@@ -470,21 +471,21 @@ function SupportSection({ userData }: { userData: any }) {
             });
             const data = await res.json();
             if (res.ok) {
-                setSubmitMsg('âœ… Submitted! We\'ll get back to you soon.');
+                setSubmitMsg('Submitted! We will get back to you soon.');
                 setMessage(''); setModelName(''); setModelUrl('');
             } else {
-                setSubmitMsg(`âŒ ${data.error}`);
+                setSubmitMsg(`Error: ${data.error}`);
             }
-        } catch { setSubmitMsg('âŒ Failed to submit. Try again.'); } 
+        } catch { setSubmitMsg('Failed to submit. Try again.'); } 
         finally { setSubmitting(false); }
     };
 
     const TABS = [
-        { key: 'feedback', label: 'ðŸ’¬ Feedback', color: 'blue' },
-        { key: 'help', label: 'ðŸ›Ÿ Get Help', color: 'emerald' },
-        { key: 'model_request', label: 'ðŸ¤– Request Model', color: 'violet' },
-        { key: 'my_tickets', label: 'ðŸ“‹ My Tickets', color: 'neutral' },
-    ] as const;
+        { key: 'feedback' as const, label: 'Feedback', Icon: MessageCircle, color: 'blue' },
+        { key: 'help' as const, label: 'Get Help', Icon: HelpCircle, color: 'emerald' },
+        { key: 'model_request' as const, label: 'Request Model', Icon: Cpu, color: 'violet' },
+        { key: 'my_tickets' as const, label: 'My Tickets', Icon: ClipboardList, color: 'neutral' },
+    ];
 
     const tabColor: Record<string, string> = {
         blue: 'bg-blue-600 text-white', emerald: 'bg-emerald-600 text-white',
@@ -503,7 +504,7 @@ function SupportSection({ userData }: { userData: any }) {
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="text-sm font-black uppercase tracking-widest">Support & Feedback</h3>
                     {userData?.plan === 'admin' && (
-                        <a href="/admin" className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:underline">Admin Dashboard â†’</a>
+                        <a href="/admin" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-blue-500 hover:underline">Admin Dashboard <ArrowRight className="w-3 h-3" /></a>
                     )}
                 </div>
                 <p className="text-xs text-neutral-500 font-medium">Have a question, feedback, or want a new AI model? Let us know.</p>
@@ -513,8 +514,8 @@ function SupportSection({ userData }: { userData: any }) {
             <div className="flex border-b border-black/5 dark:border-white/5 overflow-x-auto">
                 {TABS.map(tab => (
                     <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                        className={`flex-none px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.key ? `${tabColor[tab.color]} border-transparent` : 'text-neutral-500 border-transparent hover:text-neutral-700 dark:hover:text-neutral-300'}`}>
-                        {tab.label}
+                        className={`flex items-center gap-1.5 flex-none px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.key ? `${tabColor[tab.color]} border-transparent` : 'text-neutral-500 border-transparent hover:text-neutral-700 dark:hover:text-neutral-300'}`}>
+                        <tab.Icon className="w-3 h-3" />{tab.label}
                     </button>
                 ))}
             </div>

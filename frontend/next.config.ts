@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: {
+    appIsrStatus: false,
+  },
+  // Allow 127.0.0.1 in development
+  ...(process.env.NODE_ENV === 'development' && {
+    allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  } as any),
   async rewrites() {
     if (process.env.NODE_ENV === 'development') {
       return [

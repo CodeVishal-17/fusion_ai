@@ -330,6 +330,55 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
     }
 });
 
+// AI Debate Mode: each model critiques the others' responses
+app.post('/api/debate', authMiddleware, billingMiddleware, async (req, res) => {
+    try {
+        const { responses, originalPrompt } = req.body;
+        // responses: { openai: "...", deepseek: "...", meta: "...", gemini: "..." }
+        if (!responses || !originalPrompt) return res.status(400).json({ error: 'Missing responses or prompt' });
+
+        const modelNames = { openai: 'GPT-4o (OpenAI)', deepseek: 'DeepSeek', meta: 'Llama (Meta)', gemini: 'Gemini (Google)' };
+        const modelKeys = ['openai', 'deepseek', 'meta', 'gemini'];
+        const callFns = { openai: callOpenAI, deepseek: callDeepseek, meta: callMeta, gemini: callGemini };
+
+        const debateRound = await Promise.all(modelKeys.map(async (model) => {
+            if (!responses[model]) return { model, text: '', skipped: true };
+            const othersText = modelKeys
+                .filter(m => m !== model && responses[m])
+                .map(m => `**${modelNames[m]} said:**\n"${responses[m].substring(0, 600)}..."`)
+                .join('\n\n');
+
+            const debatePrompt = [
+                { role: 'system', content: `You are ${modelNames[model]}, participating in an AI debate panel. Be direct, sharp, and intellectually rigorous. You may agree, disagree, or extend other AI models' reasoning. Use markdown.` },
+                { role: 'user', content: `Original question: "${originalPrompt}"\n\nHere is what the other AI models said:\n\n${othersText}\n\nNow, as ${modelNames[model]}: Critically engage with their answers. Point out what you agree with, what you think is wrong or incomplete, and add your own unique insight that the others missed. Be specific and direct.` }
+            ];
+
+            try {
+                const result = await callFns[model](debatePrompt);
+                return { model, text: result.text || '', status: result.status };
+            } catch (e) {
+                return { model, text: '', status: 'error' };
+            }
+        }));
+
+        const debateResults = {};
+        debateRound.forEach(({ model, text, status }) => { debateResults[model] = { text, status }; });
+
+        // Deduct credits (half cost for debate round)
+        const totalCost = 8; // flat cost for a debate round
+        let user = req.user;
+        if (user.dailyFreeCredits >= totalCost) { user.dailyFreeCredits -= totalCost; }
+        else { const rem = totalCost - user.dailyFreeCredits; user.dailyFreeCredits = 0; user.credits = Math.max(0, user.credits - rem); }
+        await user.save();
+
+        return res.json({ debate: debateResults, remainingCredits: user.credits });
+    } catch (e) {
+        console.error('Debate Error:', e);
+        return res.status(500).json({ error: e.message });
+    }
+});
+app.post('/api/v1/debate', authMiddleware, billingMiddleware, async (req, res) => req.app._router.handle({ ...req, url: '/api/debate', path: '/api/debate' }, res));
+
 app.post('/api/improve-prompt', authMiddleware, async (req, res) => {
     try {
         const { prompt } = req.body;

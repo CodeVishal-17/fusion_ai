@@ -97,6 +97,9 @@ export default function Home() {
   const [modelReqMsg, setModelReqMsg] = useState('');
   const [modelReqStatus, setModelReqStatus] = useState('');
   const [modelReqLoading, setModelReqLoading] = useState(false);
+  const [debateResults, setDebateResults] = useState<Record<string,any>>({});
+  const [debateLoading, setDebateLoading] = useState(false);
+  const [showDebate, setShowDebate] = useState(false);
 
   const submitModelRequest = async () => {
     if (!modelReqName.trim() || !modelReqMsg.trim()) return;
@@ -125,6 +128,32 @@ export default function Home() {
     setFiles([]);
     setImageMode(false);
     setSearchMode(false);
+    setDebateResults({});
+    setShowDebate(false);
+  };
+
+  const handleDebate = async () => {
+    setDebateLoading(true);
+    setShowDebate(true);
+    try {
+      const responses: Record<string,string> = {};
+      const lastPrompt = history.openai?.findLast((m: any) => m.role === 'user')?.content || '';
+      (['openai','deepseek','meta','gemini'] as const).forEach(m => {
+        const last = history[m]?.findLast((msg: any) => msg.role === 'assistant');
+        if (last) responses[m] = last.content as string;
+      });
+      const res = await fetch('/api/debate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ responses, originalPrompt: lastPrompt })
+      });
+      const data = await res.json();
+      if (data.debate) setDebateResults(data.debate);
+    } catch (e) {
+      console.error('Debate failed', e);
+    } finally {
+      setDebateLoading(false);
+    }
   };
 
   const fetchChatHistory = async () => {
@@ -469,9 +498,31 @@ export default function Home() {
                       <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent px-4">
                           Universal AI Intelligence.
                       </h2>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-8 sm:mb-12 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
-                      
+                      <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-6 sm:mb-8 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
+
+                      {/* WHY AIFUSION SECTION */}
+                      <div className="mb-10 px-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Why AIFusion over ChatGPT or Gemini?</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+                          {[
+                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: "Get answers from GPT-4, Gemini, DeepSeek & Llama simultaneously — not just one.", color: "amber" },
+                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: "When 3 models agree and 1 differs — you spot the hallucination instantly.", color: "emerald" },
+                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer Crown", desc: "Our AI automatically ranks which model gave the best response.", color: "blue" },
+                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "AI Debate Mode", desc: "Models read each other's answers and challenge, agree, or improve them.", color: "violet" },
+                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Ultimate Synthesis", desc: "One master summary written by GPT-4 combining all 4 model outputs.", color: "pink" },
+                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Save Money", desc: "Use all top AI models for less than one ChatGPT Plus subscription.", color: "orange" },
+                          ].map((f, i) => (
+                            <div key={i} className={`p-3.5 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default`}>
+                              <div className="mb-2">{f.icon}</div>
+                              <p className="text-xs font-black mb-1">{f.title}</p>
+                              <p className="text-[10px] text-neutral-500 font-medium leading-relaxed">{f.desc}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Model Selector Chips */}
+
                       <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
                           {["openai", "deepseek", "meta", "gemini"].map((m) => (
                               <button
@@ -645,12 +696,56 @@ export default function Home() {
                                     isBest={analysis?.bestModel === key}
                                     metrics={metrics[key]}
                                     onSolo={() => handleSolo(key)}
-                                />
-                             )
+                                 />
+                              )
                         ))}
                     </div>
 
-                    {/* --- ðŸ‘‘ THE ULTIMATE SYNTHESIS (Master Response) --- */}
+                    {/* AI DEBATE BUTTON + PANEL */}
+                    {hasStartedChat && !loading && !imageMode && (
+                      <div className="mt-8 mb-4 flex justify-center">
+                        {!showDebate ? (
+                          <button onClick={handleDebate}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40 hover:scale-105 active:scale-95 transition-all">
+                            <MessageCircle className="w-4 h-4" />
+                            Start AI Debate — Let Models Discuss Each Other
+                          </button>
+                        ) : (
+                          <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-8 h-8 bg-violet-600 rounded-xl flex items-center justify-center"><MessageCircle className="w-4 h-4 text-white" /></div>
+                              <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest">AI Debate Round</h3>
+                                <p className="text-[10px] text-neutral-500">Each model reads the others and responds critically</p>
+                              </div>
+                              <button onClick={() => setShowDebate(false)} className="ml-auto p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                            {debateLoading ? (
+                              <div className="flex items-center justify-center gap-3 py-10 text-neutral-500">
+                                <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-xs font-black uppercase tracking-widest">Models are debating...</span>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(['openai','deepseek','meta','gemini'] as const).map(model => debateResults[model]?.text && (
+                                  <div key={model} className="bg-white dark:bg-white/5 border border-violet-500/20 rounded-3xl p-5">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="w-2 h-2 rounded-full bg-violet-500" />
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">{model.toUpperCase()} says</span>
+                                    </div>
+                                    <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                      {debateResults[model].text}
+                                    </ReactMarkdown>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* THE ULTIMATE SYNTHESIS (Master Response) */}
                     {analysis?.ultimateSynthesis && (
                         <div className="mt-12 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
                              <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-1 rounded-[40px] shadow-2xl shadow-blue-500/20">

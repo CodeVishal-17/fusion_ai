@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2 } from "lucide-react";
+import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2, ArrowRight, Github } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
-import { useEffect } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -15,6 +14,84 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { data: session, status } = useSession();
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    // --- 🕸️ NEURAL NETWORK ANIMATION ---
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let particles: any[] = [];
+        const particleCount = 80;
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+
+        class Particle {
+            x: number; y: number; vx: number; vy: number; size: number;
+            constructor() {
+                this.x = Math.random() * canvas!.width;
+                this.y = Math.random() * canvas!.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas!.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas!.height) this.vy *= -1;
+            }
+            draw() {
+                ctx!.fillStyle = 'rgba(59, 130, 246, 0.5)';
+                ctx!.beginPath();
+                ctx!.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx!.fill();
+            }
+        }
+
+        const init = () => {
+            resize();
+            particles = [];
+            for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        };
+
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = p.x - particles[j].x;
+                    const dy = p.y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 150) {
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${1 - dist / 150})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            });
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        window.addEventListener('resize', resize);
+        init();
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
 
     // --- 🔗 BRIDGE: SYNC NEXTAUTH TO BACKEND JWT ---
     useEffect(() => {
@@ -34,7 +111,7 @@ export default function LoginPage() {
                     email: session?.user?.email,
                     name: session?.user?.name,
                     authProvider: provider,
-                    isSimulation: false // REAL LOGIN
+                    isSimulation: false
                 })
             });
 
@@ -44,10 +121,10 @@ export default function LoginPage() {
                 localStorage.setItem("user", JSON.stringify(data.user));
                 router.push("/");
             } else {
-                setError(data.error || `Authentication bridge failed (Status: ${response.status})`);
+                setError(data.error || `Bridge failure: ${response.status}`);
             }
         } catch (err) {
-            setError("Neural gateway connection lost or timed out.");
+            setError("Neural gateway connection lost.");
         } finally {
             setLoading(false);
         }
@@ -69,21 +146,14 @@ export default function LoginPage() {
                 localStorage.setItem("user", JSON.stringify(data.user));
                 router.push("/");
             } else {
-                setError(data.error || "Login failed");
+                setError(data.error || "Access denied.");
             }
         } catch (err) {
-            setError("Connection error. Is the backend running?");
+            setError("Connection to neural core failed.");
         } finally {
             setLoading(false);
         }
     };
-
-    const features = [
-      { icon: <Cpu className="w-5 h-5" />, title: "5-Model Comparative Engine", desc: "OpenAI, Meta, Gemini, DeepSeek, and Together AI in one grid." },
-      { icon: <Mic className="w-5 h-5" />, title: "Voice & Speech Intelligence", desc: "Talk to your AI and listen to responses with natural voices." },
-      { icon: <Layout className="w-5 h-5" />, title: "Dynamic Adaptive Grid", desc: "Layouts that automatically optimize for your workspace." },
-      { icon: <Download className="w-5 h-5" />, title: "Pro Markdown Exports", desc: "Save your entire multi-model conversation with one click." }
-    ];
 
     const handleSocialLogin = async (provider: string) => {
         setError("");
@@ -96,155 +166,126 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#fafafa] dark:bg-[#080809] flex overflow-hidden relative">
-            {/* --- 🌌 CINEMATIC BACKGROUND ELEMENTS --- */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[150px] animate-pulse" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-violet-600/20 rounded-full blur-[150px] animate-pulse [animation-delay:2s]" />
-                <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] [background-image:linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] [background-size:40px_40px]" />
-            </div>
+        <div className="min-h-screen w-full bg-[#050505] text-white flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+            {/* Dynamic Background Canvas */}
+            <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none opacity-40" />
 
-            {/* Left Side: Feature Showcase */}
-            <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-16 bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/5 relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            {/* Glowing Orbs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/20 blur-[120px] rounded-full animate-pulse delay-700" />
+
+            {/* Content Container */}
+            <div className="w-full max-w-md z-10 animate-in fade-in zoom-in duration-1000">
                 
-                <div className="relative z-10 animate-in slide-in-from-left duration-700">
-                    <div className="flex items-center gap-4 mb-20 group/logo">
-                        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover/logo:scale-110 group-hover/logo:rotate-12 transition-all duration-500">
-                            <Zap className="w-7 h-7 text-white fill-white/20" />
-                        </div>
-                        <h1 className="text-3xl font-black tracking-tighter">AI<span className="text-blue-600">Fusion</span></h1>
+                {/* Logo Section */}
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-violet-600 rounded-[24px] flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-6 group hover:rotate-12 transition-transform duration-500">
+                        <Zap className="w-10 h-10 text-white fill-white/20" />
                     </div>
-
-                    <h2 className="text-6xl font-black tracking-tighter leading-[0.95] mb-8 animate-in slide-in-from-bottom-8 duration-700 delay-100">
-                        Synthesize <br />
-                        <span className="bg-gradient-to-r from-blue-600 via-violet-500 to-cyan-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">Intelligence.</span>
-                    </h2>
-                    <p className="text-neutral-500 text-xl max-w-md mb-16 leading-relaxed animate-in slide-in-from-bottom-8 duration-700 delay-200">
-                        The ultimate comparative playground for the world's most powerful language models. One prompt, infinite perspectives.
-                    </p>
-
-                    <div className="grid grid-cols-1 gap-5">
-                        {features.map((f, i) => (
-                            <div 
-                                key={i} 
-                                className="flex gap-5 p-6 rounded-[24px] bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-blue-500/30 hover:bg-white dark:hover:bg-white/[0.08] hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 group/card animate-in slide-in-from-left-12 duration-700"
-                                style={{ animationDelay: `${300 + i * 150}ms`, animationFillMode: 'both' }}
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center text-blue-600 shadow-sm border border-black/5 dark:border-white/5 group-hover/card:scale-110 transition-transform">
-                                    {f.icon}
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-sm mb-1 tracking-tight">{f.title}</h3>
-                                    <p className="text-xs text-neutral-500 leading-relaxed font-medium">{f.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                        Initiate Link
+                    </h1>
+                    <p className="text-neutral-500 font-medium text-sm">Sync your neural profile to access the dashboard.</p>
                 </div>
 
-                <div className="relative z-10 flex items-center gap-8 text-[10px] text-neutral-400 font-black uppercase tracking-[0.2em]">
-                    <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5 text-blue-500" /> AES-256 Encryption
+                {error && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-black uppercase tracking-widest text-center animate-in slide-in-from-top-2">
+                        {error}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5 text-violet-500" /> Neural Edge Network
-                    </div>
+                )}
+
+                {/* Social Login Buttons */}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                    <button 
+                        onClick={() => handleSocialLogin('google')}
+                        className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-blue-500/30 transition-all group overflow-hidden relative"
+                    >
+                        <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors" />
+                        <Globe className="w-5 h-5 text-blue-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
+                    </button>
+                    <button 
+                        onClick={() => handleSocialLogin('github')}
+                        className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-violet-500/30 transition-all group overflow-hidden relative"
+                    >
+                        <div className="absolute inset-0 bg-violet-600/0 group-hover:bg-violet-600/5 transition-colors" />
+                        <Github className="w-5 h-5 text-violet-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">GitHub</span>
+                    </button>
                 </div>
-            </div>
 
-            {/* Right Side: Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 relative z-10 animate-in fade-in duration-1000">
-                <div className="max-w-md w-full relative">
-                    <div className="lg:hidden flex flex-col items-center mb-12">
-                         <div className="w-20 h-20 bg-blue-600 rounded-[28px] flex items-center justify-center shadow-2xl mb-8 animate-bounce-slow">
-                            <Zap className="w-12 h-12 text-white fill-white/20" />
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter">AI<span className="text-blue-600">Fusion</span></h1>
-                    </div>
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                    <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em] text-neutral-500"><span className="bg-[#050505] px-4">Quantum Login</span></div>
+                </div>
 
-                    <div className="mb-12 text-center lg:text-left">
-                        <h2 className="text-4xl font-black tracking-tighter mb-3">Initiate Link</h2>
-                        <p className="text-neutral-500 text-sm font-medium">Sync your neural profile to access the dashboard.</p>
-                    </div>
-
-                    {/* Social Buttons */}
-                    <div className="grid grid-cols-2 gap-4 mb-10">
-                        <button onClick={() => handleSocialLogin('google')} className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-sm">
-                            <img src="https://www.google.com/favicon.ico" className="w-4 h-4" /> Google
-                        </button>
-                        <button onClick={() => handleSocialLogin('github')} className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-sm">
-                            <img src="https://github.com/favicon.ico" className="w-4 h-4" /> GitHub
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-6 mb-10">
-                        <div className="flex-1 h-[1px] bg-black/5 dark:bg-white/10" />
-                        <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.3em]">Quantum Login</span>
-                        <div className="flex-1 h-[1px] bg-black/5 dark:bg-white/10" />
-                    </div>
-
-                    {error && (
-                        <div className="mb-8 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-[11px] font-black uppercase tracking-wider text-center animate-in zoom-in duration-300">
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-1 mb-2 block">Identity</label>
+                {/* Local Login Form */}
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 ml-4">Identity</label>
+                        <div className="relative group">
                             <input 
                                 type="email" 
-                                placeholder="name@company.com" 
+                                placeholder="name@neural.link"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-6 py-4 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-600/50 focus:bg-white/10 transition-all group-hover:border-white/20"
                                 required
                             />
+                            <Mail className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-hover:text-blue-500 transition-colors" />
                         </div>
-                        <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 ml-1 mb-2 block">Security Code</label>
-                            <div className="relative">
-                                <input 
-                                    type={showPassword ? "text" : "password"} 
-                                    placeholder="••••••••" 
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-6 py-4 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                    required
-                                />
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-6 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between px-1 text-[11px] font-bold">
-                            <label className="flex items-center gap-2 cursor-pointer text-neutral-500">
-                                <input type="checkbox" className="w-4 h-4 rounded border-neutral-200" />
-                                Remember Device
-                            </label>
-                            <Link href="#" className="text-blue-600 hover:underline">Forgot Password?</Link>
-                        </div>
-
-                        <button 
-                            disabled={loading}
-                            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-500/30 disabled:opacity-50 mt-4 active:scale-95"
-                        >
-                            {loading ? "Authenticating Gateway..." : "Sign In to Workspace"}
-                        </button>
-                    </form>
-
-                    <div className="mt-10 pt-10 border-t border-black/5 dark:border-white/5 text-center">
-                        <p className="text-sm text-neutral-500 font-medium">
-                            Don't have an account yet? <Link href="/signup" className="text-blue-600 font-black hover:underline ml-1">Create Access</Link>
-                        </p>
                     </div>
-                </div>
+
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between mx-4">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Security Code</label>
+                            <Link href="#" className="text-[9px] font-bold text-blue-500 hover:text-blue-400">Forgot Code?</Link>
+                        </div>
+                        <div className="relative group">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-600/50 focus:bg-white/10 transition-all group-hover:border-white/20"
+                                required
+                            />
+                            <button 
+                                type="button" 
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-6 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-black py-5 rounded-[24px] mt-6 transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-3 group"
+                    >
+                        {loading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <>
+                                <span>Sign In to Workspace</span>
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                <p className="mt-8 text-center text-neutral-500 text-xs">
+                    Don't have access yet? <Link href="#" className="text-blue-500 font-bold hover:underline">Request Entry</Link>
+                </p>
+            </div>
+
+            {/* Bottom Footer Info */}
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 text-[9px] font-black uppercase tracking-widest text-neutral-700 opacity-50">
+                <div className="flex items-center gap-2"><Shield className="w-3 h-3" /> Encrypted</div>
+                <div className="flex items-center gap-2"><Cpu className="w-3 h-3" /> Edge Compute</div>
+                <div className="flex items-center gap-2"><Layout className="w-3 h-3" /> Multi-Core</div>
             </div>
         </div>
     );

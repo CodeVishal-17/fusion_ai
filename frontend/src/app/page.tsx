@@ -291,42 +291,48 @@ export default function Home() {
     <div className="h-screen w-full flex flex-col bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500">
       {/* Header */}
       <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
-        <div className="max-w-[98%] mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-              <div className="flex flex-col items-end">
-                <div className="flex items-center bg-white dark:bg-white/10 px-4 py-2 rounded-xl border border-neutral-200 dark:border-white/5">
-                    <div className="flex flex-col items-start mr-4">
-                        <span className="text-[8px] font-black uppercase text-neutral-400">Total Credits</span>
+        <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex flex-col items-start sm:items-end">
+                <div className="flex items-center bg-white dark:bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-neutral-200 dark:border-white/5">
+                    <div className="flex flex-col items-start mr-3 sm:mr-4">
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Credits</span>
                         <div className="flex items-center">
-                            <Coins className="w-3.5 h-3.5 text-amber-500 mr-1.5" />
-                            <span className="font-bold text-sm">{tokens + dailyCredits}</span>
+                            <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 mr-1 sm:mr-1.5" />
+                            <span className="font-bold text-xs sm:text-sm">{tokens + dailyCredits}</span>
                         </div>
                     </div>
-                    <div className="mx-2 w-[1px] h-6 bg-neutral-200 dark:bg-white/10" />
+                    <div className="mx-2 w-[1px] h-5 sm:h-6 bg-neutral-200 dark:bg-white/10" />
                     <div className="flex flex-col items-start">
-                        <span className="text-[8px] font-black uppercase text-neutral-400">Next Reset</span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Reset</span>
                         <div className="flex items-center">
-                            <Clock className="w-3.5 h-3.5 text-blue-500 mr-1.5" />
-                            <span className="font-mono text-[10px] font-bold">{timeLeft}</span>
+                            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500 mr-1 sm:mr-1.5" />
+                            <span className="font-mono text-[9px] sm:text-[10px] font-bold">{timeLeft}</span>
                         </div>
                     </div>
                 </div>
-                <button onClick={() => setShowCreditModal(true)} className="mt-2 text-[9px] font-bold text-blue-600 hover:underline flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5" /> Upgrade Plan
+              </div>
+              
+              <div className="flex items-center gap-2 sm:hidden">
+                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg bg-white dark:bg-white/5 border border-black/10 dark:border-white/10">
+                    {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                </button>
+                <button onClick={logout} className="p-2 rounded-lg border border-black/10 dark:border-white/10 text-red-500">
+                    <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
           </div>
 
-          <div className="flex items-center gap-4 group cursor-pointer absolute left-1/2 -translate-x-1/2">
-             <h1 className="text-xl font-black tracking-tighter flex items-center gap-2">
+          <div className="flex items-center gap-4 group cursor-pointer sm:absolute sm:left-1/2 sm:-translate-x-1/2">
+             <h1 className="text-lg sm:text-xl font-black tracking-tighter flex items-center gap-2">
                 <Zap className="w-5 h-5 text-blue-500 fill-blue-500/20" />
                 AI<span className="text-blue-500">Fusion</span>
              </h1>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             {hasStartedChat && (
-                <button onClick={handleDownloadChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">
+                <button onClick={handleDownloadChat} className="items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex">
                     <Download className="w-3.5 h-3.5" />
                     Export
                 </button>
@@ -348,10 +354,10 @@ export default function Home() {
           {!hasStartedChat ? (
               <div className="h-full flex flex-col items-center justify-center px-6 animate-in fade-in duration-1000">
                   <div className="max-w-3xl w-full text-center">
-                      <h2 className="text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent">
+                      <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent px-4">
                           Universal AI Intelligence.
                       </h2>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-lg mb-12 font-medium">Compare the world's most powerful models in one single interface.</p>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-8 sm:mb-12 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
                       
                       {/* Model Selector Chips */}
                       <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
@@ -404,40 +410,40 @@ export default function Home() {
                                    </div>
                                )}
 
-                               <div className="flex items-center">
-                                    <div className="flex items-center gap-1 pl-2">
-                                        <label className="p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl cursor-pointer transition-colors">
-                                            <input 
-                                                type="file" 
-                                                multiple
-                                                className="hidden" 
-                                                onChange={(e) => {
-                                                    const newFiles = Array.from(e.target.files || []);
-                                                    setFiles(prev => [...prev, ...newFiles].slice(0, 10));
-                                                }}
-                                            />
-                                            <Paperclip className={`w-5 h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
-                                        </label>
-                                        <button 
-                                            type="button"
-                                            onClick={handleVoiceInput}
-                                            className="p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl text-neutral-400 hover:text-blue-500 transition-colors"
-                                        >
-                                            <Mic className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                    <input 
-                                        autoFocus
-                                        type="text"
-                                        placeholder="Ask AI anything... or use @mention"
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-lg font-medium"
-                                    />
-                                    <button type="submit" className="p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-700 transition-all group-hover:scale-105 active:scale-95">
-                                        <ArrowUp className="w-6 h-6" />
-                                    </button>
-                               </div>
+                                <div className="flex items-center">
+                                     <div className="flex items-center gap-0.5 sm:gap-1 pl-1 sm:pl-2">
+                                         <label className="p-2 sm:p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl cursor-pointer transition-colors">
+                                             <input 
+                                                 type="file" 
+                                                 multiple
+                                                 className="hidden" 
+                                                 onChange={(e) => {
+                                                     const newFiles = Array.from(e.target.files || []);
+                                                     setFiles(prev => [...prev, ...newFiles].slice(0, 10));
+                                                 }}
+                                             />
+                                             <Paperclip className={`w-4 h-4 sm:w-5 sm:h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
+                                         </label>
+                                         <button 
+                                             type="button"
+                                             onClick={handleVoiceInput}
+                                             className="p-2 sm:p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl text-neutral-400 hover:text-blue-500 transition-colors"
+                                         >
+                                             <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
+                                         </button>
+                                     </div>
+                                     <input 
+                                         autoFocus
+                                         type="text"
+                                         placeholder="Ask AI anything..."
+                                         value={input}
+                                         onChange={(e) => setInput(e.target.value)}
+                                         className="flex-1 bg-transparent border-none outline-none px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-lg font-medium min-w-0"
+                                     />
+                                     <button type="submit" className="p-3 sm:p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-700 transition-all group-hover:scale-105 active:scale-95">
+                                         <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
+                                     </button>
+                                </div>
                           </div>
                       </form>
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { 
   Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, 
   Cpu, Shield, Globe, Loader2, ArrowRight, Mail, 
-  Command, Box, Activity, Layers, Terminal, Github
+  Command, Box, Activity, Layers, Terminal, Layout
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 
@@ -262,7 +262,7 @@ export default function LoginPage() {
                         <button 
                             onClick={() => handleSocialLogin('github')}
                             className="flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl border border-black/5 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-all group">
-                        <Github className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <Layout className="w-5 h-5 group-hover:scale-110 transition-transform text-violet-500" />
                         <span className="text-xs font-black uppercase tracking-widest">GitHub</span>
                     </button>
                     </div>

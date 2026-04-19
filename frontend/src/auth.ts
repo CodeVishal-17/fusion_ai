@@ -2,15 +2,8 @@ import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
-export const prisma = globalForPrisma.prisma || new PrismaClient()
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   providers: [
     Credentials({
@@ -20,14 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           password: { label: "Password", type: "password" }
         },
         async authorize(credentials) {
-            // Instantly bypass login and create a stub dev user in the DB if it doesn't exist
-            let devUser = await prisma.user.findUnique({ where: { email: "dev@local.com" } });
-            if (!devUser) {
-                devUser = await prisma.user.create({
-                    data: { name: "Developer", email: "dev@local.com", tokens: 100 }
-                });
-            }
-            return { id: devUser.id, name: devUser.name, email: devUser.email };
+            return { id: "dev", name: "Developer", email: "dev@local.com" };
         }
     }),
     GitHub({

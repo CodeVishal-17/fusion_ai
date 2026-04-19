@@ -148,7 +148,11 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             const msgs = JSON.parse(JSON.stringify(historyObj[modelName]));
             const systemPrompt = {
                 role: 'system',
-                content: `You are an absolute genius-level AI assistant integrated into AIFusion. High-quality, aesthetic markdown formatting, bullet points, and code blocks.`
+                content: `You are an absolute genius-level AI assistant integrated into AIFusion. 
+                You are currently communicating with ${req.user.name || 'a valued user'}. 
+                Always greet them warmly by their name when starting a conversation. 
+                Maintain a professional, helpful, and high-tech persona. 
+                Use high-quality, aesthetic markdown formatting, bullet points, and code blocks in your responses.`
             };
             if (msgs.length === 0 || msgs[0].role !== 'system') msgs.unshift(systemPrompt);
             if (msgs.length <= 1) return { text: "", time: 0, skipped: true };

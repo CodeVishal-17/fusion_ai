@@ -7,10 +7,11 @@ const userSchema = new mongoose.Schema({
     name: { type: String },
     authProvider: { type: String, enum: ['local', 'google', 'github'], default: 'local' },
     oauthId: { type: String },
-    plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+    plan: { type: String, enum: ['free', 'pro', 'admin'], default: 'free' },
     credits: { type: Number, default: 50 },
     dailyFreeCredits: { type: Number, default: 20 },
     lastResetDate: { type: Date, default: Date.now },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
     subscriptionExpires: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });

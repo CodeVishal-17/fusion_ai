@@ -6,7 +6,8 @@ const jwt = require('jsonwebtoken');
 // Signup
 router.post('/signup', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email: rawEmail, password } = req.body;
+        const email = rawEmail.toLowerCase();
         
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -26,7 +27,8 @@ router.post('/signup', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email: rawEmail, password } = req.body;
+        const email = rawEmail.toLowerCase();
         
         const user = await User.findOne({ email });
         if (!user || !(await user.comparePassword(password))) {
@@ -43,7 +45,8 @@ router.post('/login', async (req, res) => {
 // Social Login (Google/GitHub)
 router.post('/social-login', async (req, res) => {
     try {
-        const { email, name, authProvider, oauthId, isSimulation } = req.body;
+        const { email: rawEmail, name, authProvider, oauthId, isSimulation } = req.body;
+        const email = rawEmail.toLowerCase();
         
         let user = await User.findOne({ email });
         

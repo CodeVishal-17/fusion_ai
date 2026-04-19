@@ -767,7 +767,7 @@ export default function Home() {
                          </div>
                          <input
                              type="text"
-                             placeholder={imageMode ? 'ðŸŽ¨ Describe image to generate...' : searchMode ? 'ðŸ” Temporal search mode active...' : (files.length > 0 ? `${files.length} files attached...` : "Continue the conversation...")}
+                             placeholder={imageMode ? 'Describe image to generate...' : searchMode ? 'Search mode active — ask anything with live context...' : (files.length > 0 ? `${files.length} files attached...` : "Continue the conversation...")}
                              value={input}
                              onChange={(e) => setInput(e.target.value)}
                              onKeyPress={(e) => e.key === "Enter" && handleSubmit()}

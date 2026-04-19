@@ -217,7 +217,7 @@ export default function AdminDashboard() {
                                         <p className="text-sm text-neutral-300 font-medium leading-relaxed">{ticket.message}</p>
                                         {ticket.adminReply && (
                                             <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-1">Your Reply • {ticket.repliedAt ? new Date(ticket.repliedAt).toLocaleDateString() : ""}</p>
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-1">Your Reply — {ticket.repliedAt ? new Date(ticket.repliedAt).toLocaleDateString() : ""}</p>
                                                 <p className="text-xs text-neutral-300">{ticket.adminReply}</p>
                                             </div>
                                         )}

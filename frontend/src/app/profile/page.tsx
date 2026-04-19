@@ -340,7 +340,7 @@ export default function ProfilePage() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold truncate max-w-[200px] md:max-w-md">{chat.prompt}</p>
                                                 <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-widest">
-                                                    {new Date(chat.createdAt).toLocaleDateString()} â€¢ {chat.bestModel || "AIFusion Core"}
+                                                    {new Date(chat.createdAt).toLocaleDateString()} — {chat.bestModel || "AIFusion Core"}
                                                 </p>
                                             </div>
                                         </div>
@@ -360,7 +360,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* --- âš¡ CREDIT TOP-UP MODAL --- */}
+                {/* CREDIT TOP-UP MODAL */}
                 {showCreditModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
                         <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">

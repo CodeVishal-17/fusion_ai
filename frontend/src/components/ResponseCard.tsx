@@ -223,33 +223,40 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                     components={{
                       img: ({node, ...props}) => {
                         const [imgState, setImgState] = React.useState<'loading'|'loaded'|'error'>('loading');
+                        const [imgKey, setImgKey] = React.useState(0);
                         return (
                           <div className="my-4 overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 shadow-2xl group/img relative">
                             {imgState === 'loading' && (
-                              <div className="w-full h-64 bg-neutral-100 dark:bg-white/5 flex flex-col items-center justify-center gap-3 animate-pulse">
+                              <div className="w-full h-64 bg-neutral-100 dark:bg-white/5 flex flex-col items-center justify-center gap-3">
                                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Synthesizing Neural Image...</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Generating image...</span>
                               </div>
                             )}
                             {imgState === 'error' && (
-                              <div className="w-full h-48 bg-red-500/5 border border-red-500/20 flex flex-col items-center justify-center gap-3 rounded-2xl">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Generation failed</span>
-                                <button onClick={() => setImgState('loading')} className="text-[10px] text-blue-500 underline">Retry</button>
+                              <div className="w-full h-48 bg-amber-500/5 border border-amber-500/20 flex flex-col items-center justify-center gap-3 rounded-2xl">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Could not load image</span>
+                                <button onClick={() => { setImgState('loading'); setImgKey(k => k+1); }} className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-blue-500 px-3 py-1.5 bg-blue-500/10 rounded-xl hover:bg-blue-500/20 transition-all">
+                                  Regenerate
+                                </button>
                               </div>
                             )}
                             <img 
+                              key={imgKey}
                               {...props}
                               src={props.src as string}
                               alt={props.alt || "Generated AI"}
                               onLoad={() => setImgState('loaded')}
                               onError={() => setImgState('error')}
-                              className={`w-full h-auto object-cover hover:scale-[1.02] transition-transform duration-700 ${imgState === 'loaded' ? 'opacity-100' : 'opacity-0 h-0'}`}
+                              className={`w-full h-auto object-cover ${imgState === 'loaded' ? 'opacity-100' : 'opacity-0 h-0'}`}
                             />
                             {imgState === 'loaded' && (
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
-                                <a href={props.src as string} target="_blank" download className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/20 hover:bg-white/20 transition-all">
-                                  <Download className="w-3 h-3" /> Save Image
+                              <div className="flex items-center gap-2 p-3 border-t border-black/5 dark:border-white/5 bg-white/80 dark:bg-black/50 backdrop-blur-sm">
+                                <a href={props.src as string} target="_blank" download className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+                                  <Download className="w-3 h-3" /> Download
                                 </a>
+                                <button onClick={() => { setImgState('loading'); setImgKey(k => k+1); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10 transition-all">
+                                  Regenerate
+                                </button>
                               </div>
                             )}
                           </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2, ArrowRight } from "lucide-react";
+import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2, ArrowRight, Mail } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 
 export default function LoginPage() {

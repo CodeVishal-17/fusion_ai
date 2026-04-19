@@ -141,6 +141,22 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             }
         }
 
+        // --- 🧠 LONG-TERM MEMORY RETRIEVAL ---
+        let memoryContext = "";
+        try {
+            const recentChats = await Chat.find({ userId: req.user._id })
+                .sort({ createdAt: -1 })
+                .limit(5);
+            
+            if (recentChats.length > 0) {
+                memoryContext = "\n\n[LONG-TERM MEMORY]: Your previous interactions with this user include:\n" + 
+                    recentChats.reverse().map(c => `- Topic: ${c.prompt.substring(0, 100)}...`).join('\n') +
+                    "\nUse this context to maintain continuity and remember the user's preferences across weeks/months.";
+            }
+        } catch (memErr) {
+            console.error("Memory Retrieval Error:", memErr);
+        }
+
         const runModel = async (modelName, apiCallFunc) => {
             if (bypass.includes(modelName)) return { text: "", time: 0, skipped: true };
             if (!historyObj[modelName]) return { text: "", time: 0, skipped: true };
@@ -152,7 +168,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 You are currently communicating with ${req.user.name || 'a valued user'}. 
                 Always greet them warmly by their name when starting a conversation. 
                 Maintain a professional, helpful, and high-tech persona. 
-                Use high-quality, aesthetic markdown formatting, bullet points, and code blocks in your responses.`
+                Use high-quality, aesthetic markdown formatting, bullet points, and code blocks in your responses.${memoryContext}`
             };
             if (msgs.length === 0 || msgs[0].role !== 'system') msgs.unshift(systemPrompt);
             if (msgs.length <= 1) return { text: "", time: 0, skipped: true };

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { 
   User, Mail, Shield, Coins, ArrowLeft, LogOut, 
   Zap, ChevronRight, CreditCard, Sparkles, Clock, Settings 
@@ -36,8 +37,9 @@ export default function ProfilePage() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         localStorage.clear();
+        await signOut({ redirect: false });
         router.push("/login");
     };
 

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ResponseCard from "@/components/ResponseCard";
 import { useTheme } from "next-themes";
+import { signOut } from "next-auth/react";
 import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -277,9 +278,10 @@ export default function Home() {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      await signOut({ redirect: false });
       router.push("/login");
   };
 

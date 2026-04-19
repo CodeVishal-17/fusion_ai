@@ -18,7 +18,7 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("/api/auth/login", {
+            const res = await fetch("/api/v1/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
@@ -49,7 +49,7 @@ export default function LoginPage() {
         try {
             setError("");
             // Simulation Mode: Connects to backend and creates a test user
-            const response = await fetch('/api/auth/social-login', {
+            const response = await fetch('/api/v1/auth/social-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

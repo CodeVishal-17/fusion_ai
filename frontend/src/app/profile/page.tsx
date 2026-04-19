@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch("/api/user/me", {
+            const res = await fetch("/api/v1/user/me", {
                 headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
             });
             const data = await res.json();

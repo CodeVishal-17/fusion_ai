@@ -42,7 +42,7 @@ export default function Home() {
 
   const fetchUserData = async () => {
     try {
-        const res = await fetch("/api/user/me", {
+        const res = await fetch("/api/v1/user/me", {
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
@@ -88,7 +88,7 @@ export default function Home() {
 
   const handleBuyCredits = async (amount: number, type: string) => {
     try {
-        const res = await fetch("/api/payment/create-order", {
+        const res = await fetch("/api/v1/payment/create-order", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
@@ -106,7 +106,7 @@ export default function Home() {
             description: `${type.toUpperCase()} Credit Refuel`,
             order_id: order.id,
             handler: async (response: any) => {
-                const verifyRes = await fetch("/api/payment/verify", {
+                const verifyRes = await fetch("/api/v1/payment/verify", {
                     method: "POST",
                     headers: { 
                         "Content-Type": "application/json",
@@ -234,7 +234,7 @@ export default function Home() {
     files.forEach(f => formData.append("files", f));
     
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/v1/chat", {
         method: "POST",
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: formData,

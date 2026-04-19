@@ -224,23 +224,25 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Right Side: Access Portal */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-                <div className="w-full max-w-md animate-in fade-in zoom-in duration-1000 delay-300">
-                    
-                    {/* Logo Section (Mobile Only) */}
-                    <div className="flex flex-col items-center mb-10 lg:hidden">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-4">
-                            <Zap className="w-8 h-8 text-white fill-white/20" />
-                        </div>
-                        <h1 className="text-3xl font-black tracking-tighter">AI<span className="text-blue-500">Fusion</span></h1>
-                        <p className="text-neutral-500 text-xs mt-1">Initiate Link to Workspace</p>
+            {/* --- RIGHT SIDE: LOGIN FORM (Visible on all screens) --- */}
+            <div className="w-full lg:w-1/2 min-h-screen flex items-center justify-center p-6 relative z-10 bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-3xl lg:backdrop-blur-none lg:bg-transparent">
+            
+            {/* Mobile-Only Header Context */}
+            <div className="lg:hidden absolute top-12 left-0 w-full px-8 text-center animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <Zap className="w-6 h-6 text-white" />
                     </div>
+                    <h1 className="text-2xl font-black tracking-tighter">AI Fusion</h1>
+                </div>
+                <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest">Neural Synthesis Core</p>
+            </div>
 
-                    <div className="mb-10 text-center hidden lg:block">
-                        <h1 className="text-4xl font-black tracking-tighter mb-2">Access Portal</h1>
-                        <p className="text-neutral-500 font-medium text-sm">Synchronize your profile to continue.</p>
-                    </div>
+            <div className="w-full max-w-md bg-white dark:bg-[#0c0c0e] rounded-[40px] p-8 sm:p-12 border border-black/5 dark:border-white/10 shadow-2xl relative">
+                <div className="mb-10 text-center lg:text-left">
+                    <h2 className="text-3xl font-black tracking-tight mb-2">Initialize Core</h2>
+                    <p className="text-neutral-500 font-medium">Access your individual memory bank.</p>
+                </div>
 
                     {error && (
                         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest text-center animate-in slide-in-from-top-2">
@@ -259,11 +261,10 @@ export default function LoginPage() {
                         </button>
                         <button 
                             onClick={() => handleSocialLogin('github')}
-                            className="flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-violet-500/30 transition-all group relative overflow-hidden"
-                        >
-                            <Layout className="w-5 h-5 text-violet-500" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">GitHub</span>
-                        </button>
+                            className="flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl border border-black/5 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/5 transition-all group">
+                        <Github className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">GitHub</span>
+                    </button>
                     </div>
 
                     <div className="relative mb-8">

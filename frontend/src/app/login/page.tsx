@@ -43,10 +43,10 @@ export default function LoginPage() {
                 localStorage.setItem("user", JSON.stringify(data.user));
                 router.push("/");
             } else {
-                setError("Authentication bridge failed.");
+                setError(data.error || `Authentication bridge failed (Status: ${response.status})`);
             }
         } catch (err) {
-            setError("Neural gateway connection lost.");
+            setError("Neural gateway connection lost or timed out.");
         } finally {
             setLoading(false);
         }

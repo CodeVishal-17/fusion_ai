@@ -86,6 +86,8 @@ export default function Home() {
   const [metrics, setMetrics] = useState<Record<string, any>>({});
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>(["openai", "deepseek", "meta", "gemini"]);
+  const [imageMode, setImageMode] = useState(false);
+  const [searchMode, setSearchMode] = useState(false);
 
   const handleBuyCredits = async (amount: number, type: string) => {
     try {
@@ -232,6 +234,8 @@ export default function Home() {
     const formData = new FormData();
     formData.append("chatHistory", JSON.stringify(updatedHistory));
     formData.append("bypassModels", JSON.stringify(["openai", "deepseek", "meta", "gemini"].filter(m => !finalSelected.includes(m))));
+    formData.append("imageMode", imageMode.toString());
+    formData.append("searchMode", searchMode.toString());
     files.forEach(f => formData.append("files", f));
     
     try {
@@ -435,14 +439,35 @@ export default function Home() {
                                              <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                                          </button>
                                      </div>
-                                     <input 
-                                         autoFocus
-                                         type="text"
-                                         placeholder="Ask AI anything..."
-                                         value={input}
-                                         onChange={(e) => setInput(e.target.value)}
-                                         className="flex-1 bg-transparent border-none outline-none px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-lg font-medium min-w-0"
-                                     />
+                                     <div className="flex-1 flex items-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full px-4 py-1.5 shadow-sm focus-within:ring-2 ring-blue-500/20 transition-all">
+                
+                {/* Mode Toggles */}
+                <div className="flex items-center gap-1 mr-3 pr-3 border-r border-black/5 dark:border-white/10">
+                    <button 
+                        onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
+                        className={`p-2 rounded-full transition-all ${searchMode ? 'bg-blue-500 text-white shadow-lg' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
+                        title="Neural Deep Search"
+                    >
+                        <Clock className={`w-4 h-4 ${searchMode ? 'animate-spin-slow' : ''}`} />
+                    </button>
+                    <button 
+                        onClick={() => { setImageMode(!imageMode); setSearchMode(false); }}
+                        className={`p-2 rounded-full transition-all ${imageMode ? 'bg-amber-500 text-white shadow-lg' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
+                        title="Autonomous Imaging"
+                    >
+                        <Zap className={`w-4 h-4 ${imageMode ? 'animate-pulse' : ''}`} />
+                    </button>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder={imageMode ? "Describe the image you want to create..." : searchMode ? "What do you want to find on the live web?" : "Command the Neural Core... (use @model to solo)"}
+                  className="flex-1 bg-transparent border-none outline-none text-sm font-medium py-2 placeholder:text-neutral-400"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+                />
+                                     </div>
                                      <button type="submit" className="p-3 sm:p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-700 transition-all group-hover:scale-105 active:scale-95">
                                          <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
                                      </button>
@@ -519,6 +544,67 @@ export default function Home() {
                              )
                         ))}
                     </div>
+
+                    {/* --- 👑 THE ULTIMATE SYNTHESIS (Master Response) --- */}
+                    {analysis?.ultimateSynthesis && (
+                        <div className="mt-12 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+                             <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-1 rounded-[40px] shadow-2xl shadow-blue-500/20">
+                                <div className="bg-white dark:bg-[#0c0c0e] rounded-[38px] p-8 md:p-12 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full -mr-60 -mt-60" />
+                                    
+                                    <div className="relative z-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-500/30">
+                                                    <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-2xl md:text-3xl font-black tracking-tight text-neutral-900 dark:text-white">Ultimate Synthesis</h2>
+                                                    <p className="text-neutral-500 text-sm font-bold uppercase tracking-widest mt-1">Unified Multi-Agent Intelligence</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const blob = new Blob([analysis.ultimateSynthesis], { type: "text/markdown" });
+                                                        const url = URL.createObjectURL(blob);
+                                                        const a = document.createElement("a");
+                                                        a.href = url;
+                                                        a.download = `ultimate-synthesis-${new Date().toISOString().split('T')[0]}.md`;
+                                                        a.click();
+                                                    }}
+                                                    className="px-6 py-3 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                                                >
+                                                    <Download className="w-4 h-4" /> Export Master
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-black prose-p:text-neutral-600 dark:prose-p:text-neutral-300 prose-p:leading-relaxed prose-strong:text-blue-500">
+                                            <ReactMarkdown
+                                                components={{
+                                                    h1: ({node, ...props}) => <h1 className="text-3xl font-black mb-8 pb-4 border-b border-black/5 dark:border-white/5" {...props} />,
+                                                    h2: ({node, ...props}) => <h2 className="text-2xl font-black mt-10 mb-6 text-blue-600 dark:text-blue-500" {...props} />,
+                                                    blockquote: ({node, ...props}) => <blockquote className="border-l-8 border-blue-500/20 bg-blue-500/5 p-6 rounded-r-3xl italic" {...props} />
+                                                }}
+                                            >
+                                                {analysis.ultimateSynthesis}
+                                            </ReactMarkdown>
+                                        </div>
+
+                                        <div className="mt-12 pt-8 border-t border-black/5 dark:border-white/5 flex flex-wrap items-center gap-4">
+                                            <div className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-500/20">
+                                                Generated by GPT-4o Master
+                                            </div>
+                                            <div className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                                Verified Consensus
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    )}
                   </div>
               </div>
           )}

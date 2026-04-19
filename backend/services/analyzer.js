@@ -9,7 +9,8 @@ async function analyzeResponses(prompt, responses) {
         if (!process.env.OPENAI_API_KEY) return null;
 
         const evaluationPrompt = `
-        You are an expert AI evaluator. Compare the following AI responses to the user's prompt.
+        You are an expert AI evaluator and synthesis engineer. 
+        Compare the following AI responses to the user's prompt.
         
         User Prompt: "${prompt}"
         
@@ -18,9 +19,8 @@ async function analyzeResponses(prompt, responses) {
         
         Task:
         1. Rank the responses and pick the absolute best one.
-        2. Identify common points shared by all models.
-        3. Identify key differences/contradictions.
-        4. Provide a unified consensus answer that combines the best parts of all responses.
+        2. Identify common points and contradictions.
+        3. Create an "Ultimate Synthesis" Master Response. This should be a highly professional, comprehensive, and perfectly formatted markdown response that combines the absolute best parts of all models while correcting any errors.
         
         Return your analysis ONLY in the following JSON format:
         {
@@ -28,7 +28,8 @@ async function analyzeResponses(prompt, responses) {
             "bestReason": "Reason why it is best",
             "commonPoints": ["point 1", "point 2"],
             "keyDifferences": ["diff 1", "diff 2"],
-            "consensus": "Unified answer text"
+            "consensus": "A short 1-2 sentence summary of the group intelligence",
+            "ultimateSynthesis": "The full Master Response in high-quality Markdown"
         }
         `;
 

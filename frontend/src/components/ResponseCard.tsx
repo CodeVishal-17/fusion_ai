@@ -221,6 +221,16 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                 <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none text-[14.5px] leading-[1.8] relative z-10 antialiased font-medium text-neutral-700 dark:text-neutral-300 overflow-y-auto custom-scrollbar pr-2">
                   <ReactMarkdown
                     components={{
+                      img: ({node, ...props}) => (
+                        <div className="my-4 overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 shadow-2xl group/img relative">
+                            <img {...props} className="w-full h-auto object-cover max-h-[600px] hover:scale-[1.02] transition-transform duration-700" alt="Generated AI" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
+                                <a href={props.src} target="_blank" download className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white border border-white/20 hover:bg-white/20 transition-all">
+                                    <Download className="w-3 h-3" /> Save to Neural Core
+                                </a>
+                            </div>
+                        </div>
+                      ),
                       h1: ({node, ...props}) => <h1 className="text-xl font-extrabold mt-6 mb-4 text-neutral-900 dark:text-white tracking-tight border-b border-neutral-100 dark:border-white/5 pb-2" {...props} />,
                       h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-5 mb-3 text-neutral-800 dark:text-white" {...props} />,
                       h3: ({node, ...props}) => <h3 className="text-md font-bold mt-4 mb-2 text-neutral-700 dark:text-neutral-200" {...props} />,

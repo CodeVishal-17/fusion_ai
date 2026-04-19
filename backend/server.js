@@ -105,6 +105,9 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             } catch {}
         }
 
+        const isImageMode = req.body.imageMode === true || req.body.imageMode === 'true';
+        const isSearchMode = req.body.searchMode === true || req.body.searchMode === 'true';
+
         const activeModels = ['openai', 'deepseek', 'meta', 'gemini'].filter(m => !bypass.includes(m));
         let totalCost = activeModels.reduce((sum, model) => sum + (MODEL_COSTS[model] || 0), 0);
         
@@ -141,6 +144,14 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             }
         }
 
+        // --- 🔍 NEURAL DEEP SEARCH (Knowledge Injection) ---
+        let searchContext = "";
+        if (isSearchMode) {
+            searchContext = `\n\n[DEEP SEARCH ACTIVE]: The current date is ${new Date().toLocaleDateString()}. 
+            You must use your internal search knowledge to provide the most recent, real-time facts possible. 
+            If exact real-time data is unavailable, provide the most recent information you have access to.`;
+        }
+
         // --- 🧠 LONG-TERM MEMORY RETRIEVAL ---
         let memoryContext = "";
         try {
@@ -168,7 +179,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 You are currently communicating with ${req.user.name || 'a valued user'}. 
                 Always greet them warmly by their name when starting a conversation. 
                 Maintain a professional, helpful, and high-tech persona. 
-                Use high-quality, aesthetic markdown formatting, bullet points, and code blocks in your responses.${memoryContext}`
+                Use high-quality, aesthetic markdown formatting, bullet points, and code blocks in your responses.${memoryContext}${searchContext}`
             };
             if (msgs.length === 0 || msgs[0].role !== 'system') msgs.unshift(systemPrompt);
             if (msgs.length <= 1) return { text: "", time: 0, skipped: true };
@@ -184,6 +195,12 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                     ];
                 }
             }
+
+            if (isImageMode && modelName === 'openai') {
+                const prompt = typeof lastMsg.content === 'string' ? lastMsg.content : lastMsg.content[0].text;
+                return await generateImageDALLE(prompt);
+            }
+
             return await apiCallFunc(msgs);
         };
 
@@ -258,7 +275,10 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                     gemini: results.gemini?.status === "success" ? { text: results.gemini.text } : null
                 },
                 consensus: analysis?.consensus || "",
-                bestModel: analysis?.bestModel || ""
+                ultimateSynthesis: analysis?.ultimateSynthesis || "",
+                bestModel: analysis?.bestModel || "",
+                imageMode: isImageMode,
+                searchMode: isSearchMode
             });
         } catch (saveErr) {
             console.error("Chat Save Error:", saveErr);

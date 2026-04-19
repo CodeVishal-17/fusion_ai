@@ -1,8 +1,13 @@
 const { performance } = require('perf_hooks');
 const { OpenAI } = require('openai');
+
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     baseURL: "https://models.inference.ai.azure.com",
+});
+
+const officialOpenAI = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
 });
 
 async function callOpenAI(messages) {
@@ -23,4 +28,35 @@ async function callOpenAI(messages) {
         return { text: `Error: ${error.message}`, time, tokens: 0, status: "error" };
     }
 }
-module.exports = { callOpenAI };
+
+async function generateImageDALLE(prompt) {
+    const startTime = performance.now();
+    try {
+        if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+        
+        // Use official client for DALL-E 3
+        const response = await officialOpenAI.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            n: 1,
+            size: "1024x1024",
+            quality: "standard"
+        });
+
+        const time = Math.round(performance.now() - startTime);
+        return { 
+            text: `![Generated Image](${response.data[0].url})`, 
+            imageUrl: response.data[0].url,
+            time, 
+            tokens: 100, 
+            status: "success",
+            isImage: true 
+        };
+    } catch (error) {
+        console.error("DALL-E Error:", error.message);
+        const time = Math.round(performance.now() - startTime);
+        return { text: `Image Generation Error: ${error.message}`, time, tokens: 0, status: "error" };
+    }
+}
+
+module.exports = { callOpenAI, generateImageDALLE };

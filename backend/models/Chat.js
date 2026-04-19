@@ -10,7 +10,10 @@ const chatSchema = new mongoose.Schema({
         gemini: { text: String, metadata: Object }
     },
     consensus: { type: String },
+    ultimateSynthesis: { type: String },
     bestModel: { type: String },
+    imageMode: { type: Boolean, default: false },
+    searchMode: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

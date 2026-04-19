@@ -12,6 +12,7 @@ const { callDeepseek } = require('./services/deepseek');
 const { callMeta } = require('./services/meta');
 const { callGemini } = require('./services/gemini');
 const { analyzeResponses, improvePrompt } = require('./services/analyzer');
+const { generateImagePollinations } = require('./services/pollinations');
 
 const authMiddleware = require('./middleware/authMiddleware');
 const billingMiddleware = require('./middleware/billingMiddleware');
@@ -144,12 +145,43 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             }
         }
 
-        // --- 🔍 NEURAL DEEP SEARCH (Knowledge Injection) ---
+        // --- 🎨 IMAGE MODE: Generate unique image per model using Pollinations.ai ---
+        if (isImageMode) {
+            const prompt = historyObj.openai?.[historyObj.openai.length - 1]?.content || "";
+            const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+            
+            const [openaiImg, deepseekImg, metaImg, geminiImg] = await Promise.all([
+                bypass.includes('openai')   ? { text: '', status: 'skipped', skipped: true } : generateImagePollinations(promptText, 'openai'),
+                bypass.includes('deepseek') ? { text: '', status: 'skipped', skipped: true } : generateImagePollinations(promptText, 'deepseek'),
+                bypass.includes('meta')     ? { text: '', status: 'skipped', skipped: true } : generateImagePollinations(promptText, 'meta'),
+                bypass.includes('gemini')   ? { text: '', status: 'skipped', skipped: true } : generateImagePollinations(promptText, 'gemini'),
+            ]);
+            
+            const imgResults = { openai: openaiImg, deepseek: deepseekImg, meta: metaImg, gemini: geminiImg };
+
+            // Deduct credits
+            let user = req.user;
+            let creditsToDeduct = totalCost;
+            if (user.dailyFreeCredits >= creditsToDeduct) {
+                user.dailyFreeCredits -= creditsToDeduct;
+            } else {
+                creditsToDeduct -= user.dailyFreeCredits;
+                user.dailyFreeCredits = 0;
+                user.credits = Math.max(0, user.credits - creditsToDeduct);
+            }
+            await user.save();
+
+            return res.json({ ...imgResults, analysis: null, remainingCredits: req.user.credits });
+        }
+
+        // --- 🔍 DEEP SEARCH MODE (Temporal Knowledge Injection) ---
         let searchContext = "";
         if (isSearchMode) {
-            searchContext = `\n\n[DEEP SEARCH ACTIVE]: The current date is ${new Date().toLocaleDateString()}. 
-            You must use your internal search knowledge to provide the most recent, real-time facts possible. 
-            If exact real-time data is unavailable, provide the most recent information you have access to.`;
+            const now = new Date();
+            searchContext = `\n\n[DEEP SEARCH ACTIVE — Today is ${now.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}]: 
+            You are operating in Deep Search Mode. Start your reply with a "[LIVE DATA]" tag. 
+            Always mention the current date. Prioritize the most recent information available. 
+            If discussing events, explicitly state the timeframe. Be extremely precise about temporal facts.`;
         }
 
         // --- 🧠 LONG-TERM MEMORY RETRIEVAL ---

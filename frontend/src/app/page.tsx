@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import ResponseCard from "@/components/ResponseCard";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock } from "lucide-react";
+import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export type Message = {
@@ -39,6 +39,7 @@ export default function Home() {
         return;
     }
     fetchUserData();
+    fetchChatHistory();
     setMounted(true);
   }, []);
 
@@ -89,6 +90,45 @@ export default function Home() {
   const [selectedModels, setSelectedModels] = useState<string[]>(["openai", "deepseek", "meta", "gemini"]);
   const [imageMode, setImageMode] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+
+  const startNewChat = () => {
+    setHistory({ openai: [], deepseek: [], meta: [], gemini: [] });
+    setAnalysis(null);
+    setMetrics({});
+    setHasStartedChat(false);
+    setInput("");
+    setFiles([]);
+    setImageMode(false);
+    setSearchMode(false);
+  };
+
+  const fetchChatHistory = async () => {
+    try {
+      const res = await fetch("/api/v1/user/history", {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) setChatHistory(data);
+    } catch {}
+  };
+
+  const loadPreviousChat = (chat: any) => {
+    const h: ChatHistory = { openai: [], deepseek: [], meta: [], gemini: [] };
+    if (chat.prompt) {
+      ["openai","deepseek","meta","gemini"].forEach(m => {
+        h[m as keyof ChatHistory] = [
+          { role: "user", content: chat.prompt },
+          { role: "assistant", content: chat.responses?.[m]?.text || "" }
+        ];
+      });
+    }
+    setHistory(h);
+    setAnalysis({ consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis });
+    setHasStartedChat(true);
+    setSidebarOpen(false);
+  };
 
   const handleBuyCredits = async (amount: number, type: string) => {
     try {
@@ -293,7 +333,41 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500">
+    <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
+
+      {/* ===== COLLAPSIBLE SIDEBAR ===== */}
+      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out flex`}>
+        {/* Sidebar Panel */}
+        <div className={`${sidebarOpen ? 'w-72' : 'w-0'} overflow-hidden bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300`}>
+          <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-none">
+            <h2 className="text-sm font-black uppercase tracking-widest">Chat History</h2>
+            <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5"><X className="w-4 h-4" /></button>
+          </div>
+          <button onClick={startNewChat} className="mx-4 mt-4 flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex-none">
+            <Plus className="w-4 h-4" /> New Chat
+          </button>
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 mt-3">
+            {chatHistory.length === 0 ? (
+              <div className="text-center py-8 text-neutral-400 text-xs">No previous chats yet</div>
+            ) : chatHistory.map((chat: any, i: number) => (
+              <button key={i} onClick={() => loadPreviousChat(chat)} className="w-full text-left p-3 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all group">
+                <div className="flex items-center gap-2 mb-1">
+                  {chat.imageMode ? <Image className="w-3 h-3 text-amber-500 flex-shrink-0" /> : <MessageSquare className="w-3 h-3 text-blue-500 flex-shrink-0" />}
+                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{chat.imageMode ? 'Image Session' : 'Chat Session'}</span>
+                </div>
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate">{chat.prompt}</p>
+                <p className="text-[10px] text-neutral-400 mt-1">{new Date(chat.createdAt).toLocaleDateString()}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Toggle Tab */}
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`self-start mt-20 bg-white dark:bg-[#0c0c0e] border border-black/10 dark:border-white/10 rounded-r-xl p-2 shadow-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-all ${sidebarOpen ? 'ml-0' : 'ml-0'}`}>
+          <PanelLeft className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
       {/* Header */}
       <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
         <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -338,11 +412,15 @@ export default function Home() {
              </h1>
           </div>
           
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-3">
             {hasStartedChat && (
-                <button onClick={handleDownloadChat} className="items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex">
-                    <Download className="w-3.5 h-3.5" />
-                    Export
+              <button onClick={startNewChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-neutral-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-200 dark:hover:bg-white/10 transition-all">
+                <Plus className="w-3.5 h-3.5" /> New Chat
+              </button>
+            )}
+            {hasStartedChat && (
+                <button onClick={handleDownloadChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">
+                    <Download className="w-3.5 h-3.5" /> Export
                 </button>
             )}
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:scale-105 transition-transform">
@@ -487,7 +565,7 @@ export default function Home() {
           ) : (
               <div className="h-full overflow-y-auto custom-scrollbar px-6 py-8 pb-40">
                   <div className="max-w-[1600px] mx-auto">
-                    {/* --- 🧠 CONSENSUS ANALYSIS (Real-time Summary) --- */}
+                    {/* --- ðŸ§  CONSENSUS ANALYSIS (Real-time Summary) --- */}
                     {analysis && (
                       <div className="max-w-[98%] mx-auto mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="bg-white/80 dark:bg-white/5 backdrop-blur-2xl border border-blue-500/20 rounded-[32px] p-5 sm:p-8 shadow-2xl shadow-blue-500/5 relative overflow-hidden group">
@@ -546,7 +624,7 @@ export default function Home() {
                         ))}
                     </div>
 
-                    {/* --- 👑 THE ULTIMATE SYNTHESIS (Master Response) --- */}
+                    {/* --- ðŸ‘‘ THE ULTIMATE SYNTHESIS (Master Response) --- */}
                     {analysis?.ultimateSynthesis && (
                         <div className="mt-12 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
                              <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-1 rounded-[40px] shadow-2xl shadow-blue-500/20">
@@ -613,216 +691,98 @@ export default function Home() {
 
       {/* Floating Chat Bar (Only after start) */}
       {hasStartedChat && (
-          <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-neutral-50 via-neutral-50 dark:from-[#09090b] dark:via-[#09090b] z-40">
-             <div className="max-w-4xl mx-auto relative flex flex-col gap-4">
-                 
-                 {/* Model Selector in Chat View */}
-                 <div className="flex justify-center gap-2 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                      {["all", "openai", "deepseek", "meta", "gemini"].map((m) => (
-                          <button
-                            key={m}
-                            onClick={() => toggleModel(m)}
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border ${
-                                (m === 'all' && selectedModels.length === 4) || selectedModels.includes(m)
-                                ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20" 
-                                : "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-neutral-300 dark:hover:border-white/20"
-                            }`}
-                          >
-                              {m.toUpperCase()}
-                          </button>
-                      ))}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-50 via-neutral-50/90 dark:from-[#09090b] dark:via-[#09090b]/90 z-40">
+             <div className="max-w-4xl mx-auto relative flex flex-col gap-3">
+
+                 {/* Row 1: Mode Toggles + Model Chips */}
+                 <div className="flex flex-wrap items-center justify-between gap-2">
+                     <div className="flex items-center gap-2">
+                         <button type="button" onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
+                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${searchMode ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-blue-500/30'}`}>
+                             <Clock className="w-3 h-3" /> {searchMode ? 'Search ON' : 'Search'}
+                         </button>
+                         <button type="button" onClick={() => { setImageMode(!imageMode); setSearchMode(false); }}
+                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${imageMode ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20' : 'bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-amber-500/30'}`}>
+                             <Zap className="w-3 h-3" /> {imageMode ? 'Image ON' : 'Image'}
+                         </button>
+                     </div>
+                     <div className="flex items-center gap-1.5">
+                         {["all","openai","deepseek","meta","gemini"].map((m) => (
+                             <button key={m} onClick={() => toggleModel(m)}
+                                 className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border ${(m === 'all' && selectedModels.length === 4) || selectedModels.includes(m) ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20" : "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-neutral-300 dark:hover:border-white/20"}`}>
+                                 {m.toUpperCase()}
+                             </button>
+                         ))}
+                     </div>
                  </div>
 
-                 <form onSubmit={handleSubmit} className="relative flex flex-col bg-white dark:bg-[#18181b] border border-neutral-200 dark:border-white/10 rounded-[32px] shadow-2xl p-2 animate-in slide-in-from-bottom-4">
-                     
-                     {/* Multi-File Preview inside Chat Input */}
+                 {/* Row 2: Chat Input Form */}
+                 <form onSubmit={handleSubmit} className="relative flex flex-col bg-white dark:bg-[#18181b] border border-neutral-200 dark:border-white/10 rounded-[32px] shadow-2xl p-2">
                      {files.length > 0 && (
                          <div className="px-4 py-3 flex flex-wrap gap-2 border-b border-neutral-100 dark:border-white/5 mb-1">
                              {files.map((f, i) => (
                                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
                                     <Paperclip className="w-3 h-3 text-blue-500" />
                                     <span className="text-[10px] font-bold text-blue-600 truncate max-w-[100px]">{f.name}</span>
-                                    <button type="button" onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded">
-                                        <X className="w-3 h-3 text-blue-500" />
-                                    </button>
+                                    <button type="button" onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded"><X className="w-3 h-3 text-blue-500" /></button>
                                  </div>
                              ))}
                          </div>
                      )}
-
                      <div className="flex items-center">
-                        <div className="flex items-center gap-1 pl-1">
-                            <label className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full cursor-pointer transition-colors relative">
-                                <input 
-                                    type="file" 
-                                    multiple
-                                    className="hidden" 
-                                    onChange={(e) => {
-                                        const newFiles = Array.from(e.target.files || []);
-                                        setFiles(prev => [...prev, ...newFiles].slice(0, 10));
-                                    }}
-                                />
-                                <Paperclip className={`w-5 h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
-                            </label>
-                            <button 
-                                type="button"
-                                onClick={handleVoiceInput}
-                                className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors"
-                            >
-                                <Mic className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <input 
-                            type="text"
-                            placeholder={files.length > 0 ? `${files.length} files attached...` : "Continue the conversation..."}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            className="flex-1 bg-transparent border-none outline-none px-4 text-base font-medium"
-                        />
-                        <button type="submit" disabled={loading} className="p-3 bg-blue-600 rounded-full text-white hover:bg-blue-700 disabled:opacity-30 transition-all active:scale-90">
-                            <ArrowUp className="w-5 h-5" />
-                        </button>
+                         <div className="flex items-center gap-1 pl-1">
+                             <label className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full cursor-pointer transition-colors">
+                                 <input type="file" multiple className="hidden" onChange={(e) => { const f = Array.from(e.target.files || []); setFiles(prev => [...prev, ...f].slice(0,10)); }} />
+                                 <Paperclip className={`w-5 h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
+                             </label>
+                             <button type="button" onClick={handleVoiceInput} className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors">
+                                 <Mic className="w-5 h-5" />
+                             </button>
+                         </div>
+                         <input
+                             type="text"
+                             placeholder={imageMode ? 'ðŸŽ¨ Describe image to generate...' : searchMode ? 'ðŸ” Temporal search mode active...' : (files.length > 0 ? `${files.length} files attached...` : "Continue the conversation...")}
+                             value={input}
+                             onChange={(e) => setInput(e.target.value)}
+                             onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+                             className="flex-1 bg-transparent border-none outline-none px-4 text-base font-medium"
+                         />
+                         <button type="submit" disabled={loading} className="p-3 bg-blue-600 rounded-full text-white hover:bg-blue-700 disabled:opacity-30 transition-all active:scale-90">
+                             <ArrowUp className="w-5 h-5" />
+                         </button>
                      </div>
                  </form>
              </div>
           </div>
       )}
-      {/* --- ⚡ CREDIT TOP-UP MODAL --- */}
+
+      {/* Credit Top-Up Modal */}
       {showCreditModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
-                <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
-                
+                <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"><X className="w-5 h-5" /></button>
                 <div className="p-10">
                     <div className="flex items-center gap-4 mb-8">
-                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Zap className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black tracking-tight">Refuel Your AI ⚡</h2>
-                            <p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p>
-                        </div>
+                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20"><Zap className="w-8 h-8 text-white" /></div>
+                        <div><h2 className="text-2xl font-black tracking-tight">Refuel Your AI âš¡</h2><p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p></div>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
-                            <div>
-                                <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3>
-                                <div className="text-3xl font-black mb-4">₹99</div>
-                                <ul className="space-y-2 mb-6">
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits
-                                    </li>
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup
-                                    </li>
-                                </ul>
-                            </div>
-                            <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                Get Credits
-                            </button>
+                            <div><h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3><div className="text-3xl font-black mb-4">â‚¹99</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup</li></ul></div>
+                            <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">Get Credits</button>
                         </div>
-
                         <div className="p-6 rounded-3xl bg-blue-600/5 dark:bg-blue-600/10 border-2 border-blue-600/30 flex flex-col justify-between relative group">
                             <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
-                            <div>
-                                <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3>
-                                <div className="text-3xl font-black mb-4">₹199</div>
-                                <ul className="space-y-2 mb-6">
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits
-                                    </li>
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> Priority Support
-                                    </li>
-                                </ul>
-                            </div>
-                            <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
-                                Go Pro Now
-                            </button>
+                            <div><h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3><div className="text-3xl font-black mb-4">â‚¹199</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> Priority Support</li></ul></div>
+                            <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Go Pro Now</button>
                         </div>
                     </div>
-
-                    <div className="mt-8 text-center">
-                        <p className="text-[10px] text-neutral-400 font-medium">
-                            Daily free credits reset in <span className="text-blue-500 font-bold">{timeLeft}</span>
-                        </p>
-                    </div>
+                    <div className="mt-8 text-center"><p className="text-[10px] text-neutral-400 font-medium">Daily free credits reset in <span className="text-blue-500 font-bold">{timeLeft}</span></p></div>
                 </div>
             </div>
         </div>
       )}
-
-      {/* --- ⚡ CREDIT TOP-UP MODAL --- */}
-      {showCreditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
-                <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
-                
-                <div className="p-10">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Zap className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black tracking-tight">Refuel Your AI ⚡</h2>
-                            <p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
-                            <div>
-                                <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3>
-                                <div className="text-3xl font-black mb-4">₹99</div>
-                                <ul className="space-y-2 mb-6">
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits
-                                    </li>
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup
-                                    </li>
-                                </ul>
-                            </div>
-                            <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                Get Credits
-                            </button>
-                        </div>
-
-                        <div className="p-6 rounded-3xl bg-blue-600/5 dark:bg-blue-600/10 border-2 border-blue-600/30 flex flex-col justify-between relative group">
-                            <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
-                            <div>
-                                <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3>
-                                <div className="text-3xl font-black mb-4">₹199</div>
-                                <ul className="space-y-2 mb-6">
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits
-                                    </li>
-                                    <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
-                                        <Sparkles className="w-3 h-3 text-blue-500" /> Priority Support
-                                    </li>
-                                </ul>
-                            </div>
-                            <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
-                                Go Pro Now
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mt-8 text-center">
-                        <p className="text-[10px] text-neutral-400 font-medium">
-                            Daily free credits reset in <span className="text-blue-500 font-bold">{timeLeft}</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

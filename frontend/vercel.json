@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/v1/:path*",
-      "destination": "https://aifusion-backend.onrender.com/api/:path*"
+      "destination": "https://fusion-ai-g3u8.onrender.com/api/:path*"
     }
   ]
 }

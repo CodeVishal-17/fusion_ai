@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe } from "lucide-react";
+import { Zap, Eye, EyeOff, Sparkles, Mic, Layout, Download, Cpu, Shield, Globe, Loader2 } from "lucide-react";
+import { signIn, useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -12,6 +14,43 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { data: session, status } = useSession();
+
+    // --- 🔗 BRIDGE: SYNC NEXTAUTH TO BACKEND JWT ---
+    useEffect(() => {
+        if (status === "authenticated" && session?.user) {
+            syncWithBackend();
+        }
+    }, [status, session]);
+
+    const syncWithBackend = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/v1/auth/social-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: session?.user?.email,
+                    name: session?.user?.name,
+                    authProvider: 'social',
+                    isSimulation: false // REAL LOGIN
+                })
+            });
+
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                router.push("/");
+            } else {
+                setError("Authentication bridge failed.");
+            }
+        } catch (err) {
+            setError("Neural gateway connection lost.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,29 +85,11 @@ export default function LoginPage() {
     ];
 
     const handleSocialLogin = async (provider: string) => {
+        setError("");
         try {
-            setError("");
-            // Simulation Mode: Connects to backend and creates a test user
-            const response = await fetch('/api/v1/auth/social-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: `tester_${provider}@aifusion.com`,
-                    authProvider: provider,
-                    isSimulation: true
-                })
-            });
-
-            const data = await response.json();
-            if (data.token) {
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user));
-                router.push("/");
-            } else {
-                setError(data.error || "Social link failed.");
-            }
+            await signIn(provider);
         } catch (err) {
-            setError("Connection to neural gateway failed.");
+            setError("Failed to initiate secure link.");
         }
     };
 

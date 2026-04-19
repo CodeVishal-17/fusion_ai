@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { Providers } from "@/components/Providers";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -31,9 +31,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col transition-colors duration-500 bg-neutral-50 text-black dark:bg-[#0a0a0a] dark:text-white" suppressHydrationWarning>
-          <ThemeProvider attribute="class" defaultTheme="dark">
+          <Providers>
               {children}
-          </ThemeProvider>
+          </Providers>
           <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
     </html>

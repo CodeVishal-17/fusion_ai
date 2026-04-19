@@ -19,11 +19,12 @@ export default function LoginPage() {
     // --- 🔗 BRIDGE: SYNC NEXTAUTH TO BACKEND JWT ---
     useEffect(() => {
         if (status === "authenticated" && session?.user) {
-            syncWithBackend();
+            const provider = localStorage.getItem("pending_provider") || 'google';
+            syncWithBackend(provider);
         }
     }, [status, session]);
 
-    const syncWithBackend = async () => {
+    const syncWithBackend = async (provider: string) => {
         setLoading(true);
         try {
             const response = await fetch('/api/v1/auth/social-login', {
@@ -32,7 +33,7 @@ export default function LoginPage() {
                 body: JSON.stringify({
                     email: session?.user?.email,
                     name: session?.user?.name,
-                    authProvider: 'social',
+                    authProvider: provider,
                     isSimulation: false // REAL LOGIN
                 })
             });
@@ -87,6 +88,7 @@ export default function LoginPage() {
     const handleSocialLogin = async (provider: string) => {
         setError("");
         try {
+            localStorage.setItem("pending_provider", provider);
             await signIn(provider);
         } catch (err) {
             setError("Failed to initiate secure link.");

@@ -17,6 +17,7 @@ const authMiddleware = require('./middleware/authMiddleware');
 const billingMiddleware = require('./middleware/billingMiddleware');
 const User = require('./models/User');
 const Usage = require('./models/Usage');
+const Chat = require('./models/Chat');
 
 const app = express();
 const allowedOrigins = [
@@ -220,6 +221,27 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
                 analysis = await analyzeResponses(promptText, results);
             } catch (anaErr) { console.error("Analysis Error:", anaErr); }
+        }
+
+        // --- 💾 SAVE CHAT HISTORY ---
+        try {
+            const prompt = historyObj.openai?.[historyObj.openai.length - 1]?.content || "";
+            const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+            
+            await Chat.create({
+                userId: user._id,
+                prompt: promptText,
+                responses: {
+                    openai: results.openai?.status === "success" ? { text: results.openai.text } : null,
+                    deepseek: results.deepseek?.status === "success" ? { text: results.deepseek.text } : null,
+                    meta: results.meta?.status === "success" ? { text: results.meta.text } : null,
+                    gemini: results.gemini?.status === "success" ? { text: results.gemini.text } : null
+                },
+                consensus: analysis?.consensus || "",
+                bestModel: analysis?.bestModel || ""
+            });
+        } catch (saveErr) {
+            console.error("Chat Save Error:", saveErr);
         }
 
         return res.json({

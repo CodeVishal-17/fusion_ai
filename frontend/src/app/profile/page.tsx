@@ -6,17 +6,26 @@ import { signOut } from "next-auth/react";
 import { 
   User, Mail, Shield, Coins, ArrowLeft, LogOut, 
   Zap, ChevronRight, CreditCard, Sparkles, Clock, Settings,
-  Edit2, Check, X, Loader2
+  Edit2, Check, X, Loader2, MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function ProfilePage() {
     const [userData, setUserData] = useState<any>(null);
+    const [chatHistory, setChatHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState("");
     const [updating, setUpdating] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [showCreditModal, setShowCreditModal] = useState(false);
+    const [timeLeft, setTimeLeft] = useState("");
     const router = useRouter();
 
     useEffect(() => {
@@ -26,6 +35,29 @@ export default function ProfilePage() {
             return;
         }
         fetchProfile();
+        fetchHistory();
+
+        // Timer for credit reset
+        const timer = setInterval(() => {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const diff = tomorrow.getTime() - now.getTime();
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff / (1000 * 60)) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        }, 1000);
+
+        // Load Razorpay script
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            clearInterval(timer);
+            document.body.removeChild(script);
+        };
     }, []);
 
     const fetchProfile = async () => {
@@ -40,6 +72,18 @@ export default function ProfilePage() {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch("/api/v1/user/history", {
+                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) setChatHistory(data);
+        } catch (err) {
+            console.error("History Error:", err);
         }
     };
 
@@ -75,6 +119,50 @@ export default function ProfilePage() {
         } finally {
             setUpdating(false);
             setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+        }
+    };
+
+    const handleBuyCredits = async (amount: number, type: string) => {
+        try {
+            const res = await fetch("/api/v1/payment/create-order", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}` 
+                },
+                body: JSON.stringify({ amount, planType: type })
+            });
+            const order = await res.json();
+    
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: order.amount,
+                currency: "INR",
+                name: "AIFusion",
+                description: `Refuel ${type === 'pro' ? '1500' : '500'} Energy Tokens`,
+                order_id: order.id,
+                handler: async function (response: any) {
+                    const verifyRes = await fetch("/api/v1/payment/verify-payment", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${localStorage.getItem("token")}`
+                        },
+                        body: JSON.stringify(response)
+                    });
+                    const result = await verifyRes.json();
+                    if (result.success) {
+                        setMessage({ type: "success", text: "Energy core refueled successfully!" });
+                        setShowCreditModal(false);
+                        fetchProfile(); // Refresh tokens
+                    }
+                },
+                theme: { color: "#2563eb" }
+            };
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (err) {
+            alert("Payment gateway connection failed.");
         }
     };
 
@@ -202,7 +290,10 @@ export default function ProfilePage() {
                                 />
                             </div>
                             
-                            <button className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 group">
+                            <button 
+                                onClick={() => setShowCreditModal(true)}
+                                className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 group"
+                            >
                                 <CreditCard className="w-4 h-4 group-hover:scale-110 transition-transform" /> Top Up Energy
                             </button>
                         </div>
@@ -239,25 +330,102 @@ export default function ProfilePage() {
                             </h3>
                             
                             <div className="space-y-4">
-                                {[1, 2, 3].map((_, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-all cursor-pointer group">
+                                {chatHistory.length > 0 ? chatHistory.map((chat, i) => (
+                                    <div key={chat._id} className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-all cursor-pointer group">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-600">
-                                                <Zap className="w-4 h-4" />
+                                                <MessageSquare className="w-4 h-4" />
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold">Session #{842 - i}</p>
-                                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-widest">AIFusion Core • 2h ago</p>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold truncate max-w-[200px] md:max-w-md">{chat.prompt}</p>
+                                                <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-widest">
+                                                    {new Date(chat.createdAt).toLocaleDateString()} • {chat.bestModel || "AIFusion Core"}
+                                                </p>
                                             </div>
                                         </div>
                                         <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:translate-x-1 transition-transform" />
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="text-center py-12">
+                                        <div className="w-12 h-12 bg-neutral-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Zap className="w-6 h-6 text-neutral-300" />
+                                        </div>
+                                        <p className="text-neutral-500 text-sm font-medium">No synthesis sessions found yet.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                     </div>
                 </div>
+
+                {/* --- ⚡ CREDIT TOP-UP MODAL --- */}
+                {showCreditModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
+                            <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                            
+                            <div className="p-10">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                        <Zap className="w-8 h-8 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black tracking-tight">Refuel Your AI ⚡</h2>
+                                        <p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
+                                        <div>
+                                            <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3>
+                                            <div className="text-3xl font-black mb-4">₹99</div>
+                                            <ul className="space-y-2 mb-6">
+                                                <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
+                                                    <Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits
+                                                </li>
+                                                <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
+                                                    <Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                            Get Credits
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 rounded-3xl bg-blue-600/5 dark:bg-blue-600/10 border-2 border-blue-600/30 flex flex-col justify-between relative group">
+                                        <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
+                                        <div>
+                                            <h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3>
+                                            <div className="text-3xl font-black mb-4">₹199</div>
+                                            <ul className="space-y-2 mb-6">
+                                                <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
+                                                    <Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits
+                                                </li>
+                                                <li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium">
+                                                    <Sparkles className="w-3 h-3 text-blue-500" /> Priority Support
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+                                            Go Pro Now
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 text-center">
+                                    <p className="text-[10px] text-neutral-400 font-medium">
+                                        Daily free credits reset in <span className="text-blue-500 font-bold">{timeLeft}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/User');
+const Chat = require('../models/Chat');
 
 // Get current user profile
 router.get('/me', authMiddleware, async (req, res) => {
@@ -42,6 +43,18 @@ router.put('/update', authMiddleware, async (req, res) => {
                 plan: user.plan
             }
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user synthesis history
+router.get('/history', authMiddleware, async (req, res) => {
+    try {
+        const chats = await Chat.find({ userId: req.user._id })
+            .sort({ createdAt: -1 })
+            .limit(10);
+        res.json(chats);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

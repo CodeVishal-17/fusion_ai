@@ -568,6 +568,7 @@ export default function Home() {
                      <div className="flex items-center gap-2 pr-4 border-r border-black/5 dark:border-white/10">
                          <Coins className="w-3.5 h-3.5 text-amber-500" />
                          <span className="text-xs font-black">{tokens + dailyCredits}</span>
+                         <span className="text-[9px] font-bold text-neutral-400 opacity-60">~{Math.floor((tokens + dailyCredits) / 5)} prompts</span>
                      </div>
                      <div className="flex items-center gap-2">
                          <Clock className="w-3.5 h-3.5 text-neutral-400" />
@@ -624,27 +625,6 @@ export default function Home() {
                       </h2>
                       <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-6 sm:mb-8 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
 
-                      <div className="mb-10 px-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Why AIFusion over ChatGPT or Gemini?</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left max-w-2xl mx-auto">
-                          {[
-                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: "Comparative synthesis", color: "amber" },
-                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: "Cross-model consensus", color: "emerald" },
-                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer", desc: "Logic-based ranking", color: "blue" },
-                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "Battle Mode", desc: "Models challenging logic", color: "violet" },
-                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Fastest Speed", desc: "Sub-second responses", color: "pink" },
-                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Cost Efficiency", desc: "90% cheaper access", color: "orange" },
-                          ].map((f, i) => (
-                            <div key={i} className={`p-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default relative overflow-hidden`}>
-                              <div className="flex items-center gap-2.5 mb-1.5">
-                                {f.icon}
-                                <p className="text-[11px] font-black">{f.title}</p>
-                              </div>
-                              <p className="text-[9px] text-neutral-500 font-medium leading-tight">{f.desc}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
 
                       <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
                           {["openai", "deepseek", "meta", "gemini"].map((m) => (
@@ -797,11 +777,11 @@ export default function Home() {
 
                       <div className="mt-16 pb-12 flex flex-col items-center gap-8">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Powered by Neural Core Engines</p>
-                        <div className="flex items-center justify-center gap-12 opacity-40 hover:opacity-100 transition-all duration-700 hover:scale-105">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="openai" />
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="gemini" />
-                            <img src="https://www.deepseek.com/favicon.ico" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="deepseek" />
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" className="h-8 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="meta" />
+                        <div className="flex items-center justify-center gap-12 opacity-80 hover:opacity-100 transition-all duration-700 hover:scale-105">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" className="h-10 hover:scale-110 transition-all drop-shadow-md" alt="openai" />
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" className="h-10 hover:scale-110 transition-all drop-shadow-md" alt="gemini" />
+                            <img src="https://www.deepseek.com/favicon.ico" className="h-10 hover:scale-110 transition-all drop-shadow-md" alt="deepseek" />
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" className="h-8 hover:scale-110 transition-all drop-shadow-md" alt="meta" />
                         </div>
                       </div>
                   </div>

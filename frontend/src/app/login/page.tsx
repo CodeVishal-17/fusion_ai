@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   Zap, Eye, EyeOff, Shield, Loader2, ArrowRight, Mail, 
-  Activity, Layers, Terminal, Layout
+  Activity, Layers, Terminal, Layout, Sparkles, ShieldCheck, MessageCircle, Cpu, Coins, Clock
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 
@@ -196,15 +196,17 @@ export default function LoginPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                         {[
-                            { icon: <Activity className="w-5 h-5" />, title: "Comparative Sync", desc: "Real-time model benchmarking." },
-                            { icon: <Layers className="w-5 h-5" />, title: "Multi-Modal", desc: "Images, text, and code synthesis." },
-                            { icon: <Shield className="w-5 h-5 text-emerald-500" />, title: "Neural Privacy", desc: "Encrypted workspace tunnels." },
-                            { icon: <Terminal className="w-5 h-5 text-blue-500" />, title: "Edge Compute", desc: "Zero-latency neural routing." }
+                            { icon: <Sparkles className="w-5 h-5 text-amber-500" />, title: "4 AIs at Once", desc: "Compare GPT-4, Gemini 1.5, Claude, and Llama 3 in one unified interface." },
+                            { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, title: "Verify Truth", desc: "Automatic consensus analysis to filter out AI hallucinations instantly." },
+                            { icon: <Zap className="w-5 h-5 text-blue-500" />, title: "Winner Crown", desc: "Our neural evaluator picks the best answer based on logic and accuracy." },
+                            { icon: <MessageCircle className="w-5 h-5 text-violet-500" />, title: "Battle Mode", desc: "Let models debate each other to reach the most refined conclusion." },
+                            { icon: <Cpu className="w-5 h-5 text-pink-500" />, title: "Peak Speed", desc: "Parallel processing ensures the fastest response from every model." },
+                            { icon: <Coins className="w-5 h-5 text-orange-500" />, title: "Cost Savings", desc: "Access premium model intelligence at a fraction of individual subscriptions." }
                         ].map((f, i) => (
                             <div key={i} className="group p-5 bg-white/5 border border-white/10 rounded-[24px] hover:bg-white/10 hover:border-blue-500/30 transition-all cursor-default">
-                                <div className="mb-3 text-blue-500 group-hover:scale-110 transition-transform">{f.icon}</div>
+                                <div className="mb-3 group-hover:scale-110 transition-transform">{f.icon}</div>
                                 <h4 className="text-xs font-black uppercase tracking-widest mb-1">{f.title}</h4>
-                                <p className="text-[10px] text-neutral-500 font-medium">{f.desc}</p>
+                                <p className="text-[10px] text-neutral-500 font-medium leading-relaxed">{f.desc}</p>
                             </div>
                         ))}
                     </div>

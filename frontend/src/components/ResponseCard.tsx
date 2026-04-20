@@ -343,9 +343,9 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                 <div className="mt-6 flex justify-end">
                    <button 
                     onClick={() => onVote?.(modelName)}
-                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${userVote === modelName ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:bg-amber-500/10 hover:text-amber-500'}`}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${userVote?.toLowerCase() === modelName.toLowerCase() ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:bg-amber-500/10 hover:text-amber-500'}`}
                    >
-                     {userVote === modelName ? '🏆 Winner' : 'Vote as Winner'}
+                     {userVote?.toLowerCase() === modelName.toLowerCase() ? '🏆 Winner' : 'Vote as Winner'}
                    </button>
                 </div>
               </div>

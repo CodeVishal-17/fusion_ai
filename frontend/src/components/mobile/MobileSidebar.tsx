@@ -12,7 +12,7 @@ export default function MobileSidebar({ activeSection, setActiveSection, credits
     const tabs = [
         { id: 'chat', icon: <MessageSquare className="w-5 h-5" />, label: 'Synthesis' },
         { id: 'knowledge', icon: <Book className="w-5 h-5" />, label: 'Knowledge' },
-        { id: 'workflow', icon: <Layers className="w-5 h-5" />, label: 'Pipeline' },
+        { id: 'workflows', icon: <Layers className="w-5 h-5" />, label: 'Pipeline' },
         { id: 'analytics', icon: <BarChart3 className="w-5 h-5" />, label: 'Metrics' },
         { id: 'settings', icon: <Settings className="w-5 h-5" />, label: 'Power' },
     ];

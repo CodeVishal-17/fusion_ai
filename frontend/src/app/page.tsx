@@ -1032,6 +1032,59 @@ function NeuralCore() {
       </main>
       </div>
 
+      {/* --- 📟 MOBILE DRAWER --- */}
+      {isMobile && sidebarOpen && (
+          <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300">
+              <div 
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+                  onClick={() => setSidebarOpen(false)} 
+              />
+              <div className="relative w-[80%] max-w-sm bg-white dark:bg-[#0c0c0e] h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-500">
+                  <div className="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                          <Zap className="w-6 h-6 text-blue-600" />
+                          <span className="text-sm font-black uppercase tracking-widest">Memory Bank</span>
+                      </div>
+                      <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/5">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                      {chatHistory.length > 0 ? (
+                          chatHistory.map((chat: any, i: number) => (
+                              <button 
+                                  key={i} 
+                                  onClick={() => { loadPreviousChat(chat); setSidebarOpen(false); }} 
+                                  className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-black/5 dark:border-white/10 transition-all"
+                              >
+                                  <div className="flex items-center gap-2 mb-2">
+                                      {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
+                                      <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
+                                  </div>
+                                  <p className="text-xs font-bold truncate">{chat.title || chat.prompt}</p>
+                              </button>
+                          ))
+                      ) : (
+                          <div className="h-full flex flex-col items-center justify-center opacity-40">
+                              <MessageSquare className="w-10 h-10 mb-4" />
+                              <p className="text-xs font-bold uppercase tracking-widest">No history yet</p>
+                          </div>
+                      )}
+                  </div>
+                  
+                  <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-white/5">
+                      <button 
+                          onClick={() => { startNewChat(); setSidebarOpen(false); }} 
+                          className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                      >
+                          + New Session
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* --- 📟 MODALS --- */}
       {showCreditModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">

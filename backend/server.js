@@ -489,12 +489,6 @@ app.delete('/api/knowledge/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-        const doc = await processDocument(req.user._id, req.file);
-        res.json({ message: 'Document processed successfully', fileName: doc.fileName });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 app.post('/api/workflows/execute', authMiddleware, async (req, res) => {
     try {

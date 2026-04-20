@@ -535,6 +535,7 @@ export default function Home() {
                 <p className="text-[9px] text-neutral-400 mt-1 uppercase font-bold tracking-tighter">{new Date(chat.createdAt).toLocaleDateString()}</p>
               </button>
             ))}
+          </div>
           
           {/* Mobile Footer in Sidebar */}
           <div className="mt-auto p-4 border-t border-black/5 dark:border-white/5 sm:hidden space-y-2">
@@ -1213,7 +1214,6 @@ export default function Home() {
           </>
         )}
       </main>
-    </div>
     </div>
     </div>
   );

@@ -812,9 +812,13 @@ function NeuralCore() {
                             setSelectedModels(models);
                             handleChatSend(input, models, imageMode, searchMode);
                         }}
+                        onVoice={handleVoiceInput}
+                        onFile={(newFiles) => setFiles(prev => [...prev, ...newFiles])}
                         loading={loading}
                         dailyCredits={dailyCredits}
                         tokens={tokens}
+                        files={files}
+                        removeFile={(idx) => setFiles(prev => prev.filter((_, i) => i !== idx))}
                       />
 
                       <div className="mt-16 pb-12 flex flex-col items-center gap-8">
@@ -1082,9 +1086,13 @@ function NeuralCore() {
                             setSelectedModels(models);
                             handleChatSend(input, models, imageMode, searchMode);
                         }}
+                        onVoice={handleVoiceInput}
+                        onFile={(newFiles) => setFiles(prev => [...prev, ...newFiles])}
                         loading={loading}
                         dailyCredits={dailyCredits}
                         tokens={tokens}
+                        files={files}
+                        removeFile={(idx) => setFiles(prev => prev.filter((_, i) => i !== idx))}
                       />
                   </div>
               </div>

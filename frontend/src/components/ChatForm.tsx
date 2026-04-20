@@ -1,15 +1,19 @@
 "use client";
 import React, { useState } from 'react';
-import { Send, Sparkles, Clock, ImageIcon, Cpu } from 'lucide-react';
+import { Send, Sparkles, Clock, ImageIcon, Cpu, Paperclip, Mic, X, File as FileIcon } from 'lucide-react';
 
 interface ChatFormProps {
     onSend: (input: string, imageMode: boolean, searchMode: boolean, activeModels: string[]) => void;
+    onVoice: () => void;
+    onFile: (files: File[]) => void;
     loading: boolean;
     dailyCredits: number;
     tokens: number;
+    files: File[];
+    removeFile: (index: number) => void;
 }
 
-export default function ChatForm({ onSend, loading, dailyCredits, tokens }: ChatFormProps) {
+export default function ChatForm({ onSend, onVoice, onFile, loading, dailyCredits, tokens, files, removeFile }: ChatFormProps) {
     const [localInput, setLocalInput] = useState('');
     const [imageMode, setImageMode] = useState(false);
     const [searchMode, setSearchMode] = useState(false);
@@ -33,6 +37,20 @@ export default function ChatForm({ onSend, loading, dailyCredits, tokens }: Chat
             <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-violet-600/20 rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                 <div className="relative bg-white dark:bg-[#121214] border border-black/10 dark:border-white/10 rounded-[28px] shadow-2xl overflow-hidden transition-all duration-300 group-focus-within:border-blue-500/50">
+                    
+                    {files.length > 0 && (
+                        <div className="flex flex-wrap gap-2 px-6 pt-4">
+                            {files.map((f, i) => (
+                                <div key={i} className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-xl animate-in zoom-in-95 duration-300">
+                                    <FileIcon className="w-3 h-3 text-blue-500" />
+                                    <span className="text-[10px] font-bold text-blue-600 truncate max-w-[100px]">{f.name}</span>
+                                    <button type="button" onClick={() => removeFile(i)} className="p-1 hover:bg-blue-500/20 rounded-lg transition-all">
+                                        <X className="w-3 h-3 text-blue-500" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     
                     <div className="flex flex-col">
                         <textarea
@@ -63,6 +81,30 @@ export default function ChatForm({ onSend, loading, dailyCredits, tokens }: Chat
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${imageMode ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-500 hover:border-violet-500/30'}`}
                                 >
                                     <ImageIcon className="w-3 h-3" /> {imageMode ? 'Image ON' : 'Image'}
+                                </button>
+                                <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-1" />
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById('chat-file-input')?.click()}
+                                    className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-500 hover:text-blue-500 transition-all"
+                                >
+                                    <Paperclip className="w-4 h-4" />
+                                </button>
+                                <input 
+                                    id="chat-file-input"
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files) onFile(Array.from(e.target.files));
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={onVoice}
+                                    className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-500 hover:text-blue-500 transition-all"
+                                >
+                                    <Mic className="w-4 h-4" />
                                 </button>
                                 <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-1" />
                                 <div className="flex items-center gap-1">

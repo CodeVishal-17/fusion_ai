@@ -5,7 +5,7 @@ import ResponseCard from "@/components/ResponseCard";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu, Layers, BarChart3 } from "lucide-react";
+import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu, Layers, BarChart3, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import KnowledgeSection from '@/components/sections/KnowledgeSection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';

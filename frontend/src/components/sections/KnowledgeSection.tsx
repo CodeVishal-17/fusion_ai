@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Trash2, Database, Search, CheckCircle2, Shield, X } from 'lucide-react';
+import { Upload, FileText, Trash2, Database, Search, CheckCircle2, Shield, X, Zap } from 'lucide-react';
 
 export default function KnowledgeSection() {
     const [files, setFiles] = useState<any[]>([]);

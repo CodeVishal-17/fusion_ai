@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import ResponseCard from "@/components/ResponseCard";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
@@ -460,7 +460,8 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
+    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-[#fafafa] dark:bg-[#080809]"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
 
       {/* --- 📟 MOBILE NAVIGATION --- */}
       {isMobile && (
@@ -1081,5 +1082,6 @@ export default function Home() {
         </div>
       )}
     </div>
+    </Suspense>
   );
 }

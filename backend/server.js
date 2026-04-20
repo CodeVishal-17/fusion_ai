@@ -37,12 +37,11 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'https://fusion-ai-ten.vercel.app',
-    'https://fusion-ai-sigma.vercel.app'
+    process.env.FRONTEND_URL
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow if no origin (like mobile apps/curl) or if matches whitelist or if from Vercel
         if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('vercel.app')) {
             callback(null, true);
         } else {
@@ -461,17 +460,7 @@ app.post('/api/resolve-debate', authMiddleware, async (req, res) => {
 
 // --- 🧠 ADVANCED FEATURES ENDPOINTS ---
 
-app.post('/api/knowledge/upload',    authMiddleware, multer().single('file'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-        const doc = await processDocument(req.user._id, req.file);
-        res.json({ message: 'Document processed successfully', fileName: doc.fileName });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/v1/knowledge/upload', authMiddleware, multer().single('file'), async (req, res) => {
+app.post('/api/knowledge/upload', authMiddleware, multer().single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const doc = await processDocument(req.user._id, req.file);
@@ -491,16 +480,6 @@ app.post('/api/workflows/execute', authMiddleware, async (req, res) => {
     }
 });
 
-app.post('/api/v1/workflows/execute', authMiddleware, async (req, res) => {
-    try {
-        const { workflow, prompt } = req.body;
-        const result = await executeWorkflow(req.user._id, workflow, prompt);
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 app.post('/api/prompt/optimize', authMiddleware, async (req, res) => {
     try {
         const { prompt } = req.body;
@@ -511,26 +490,7 @@ app.post('/api/prompt/optimize', authMiddleware, async (req, res) => {
     }
 });
 
-app.post('/api/v1/prompt/optimize', authMiddleware, async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        const optimized = await optimizePrompt(prompt);
-        res.json({ optimized });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 app.get('/api/analytics', authMiddleware, async (req, res) => {
-    try {
-        const stats = await getUserStats(req.user._id);
-        res.json(stats);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/v1/analytics', authMiddleware, async (req, res) => {
     try {
         const stats = await getUserStats(req.user._id);
         res.json(stats);

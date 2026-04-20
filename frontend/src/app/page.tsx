@@ -621,6 +621,7 @@ export default function Home() {
           )}
         </div>
       </div>
+    )}
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">

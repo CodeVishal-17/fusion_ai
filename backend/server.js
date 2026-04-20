@@ -460,7 +460,7 @@ app.post('/api/resolve-debate', authMiddleware, async (req, res) => {
 
 // --- 🧠 ADVANCED FEATURES ENDPOINTS ---
 
-app.post('/api/knowledge/upload', authMiddleware, multer().single('file'), async (req, res) => {
+app.post(['/api/knowledge/upload', '/api/v1/knowledge/upload'], authMiddleware, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const doc = await processDocument(req.user._id, req.file);
@@ -470,7 +470,7 @@ app.post('/api/knowledge/upload', authMiddleware, multer().single('file'), async
     }
 });
 
-app.get('/api/knowledge/list', authMiddleware, async (req, res) => {
+app.get(['/api/knowledge/list', '/api/v1/knowledge/list'], authMiddleware, async (req, res) => {
     try {
         const Knowledge = require('./models/Knowledge');
         const docs = await Knowledge.find({ userId: req.user._id }).select('-chunks');
@@ -480,7 +480,7 @@ app.get('/api/knowledge/list', authMiddleware, async (req, res) => {
     }
 });
 
-app.delete('/api/knowledge/:id', authMiddleware, async (req, res) => {
+app.delete(['/api/knowledge/:id', '/api/v1/knowledge/:id'], authMiddleware, async (req, res) => {
     try {
         const Knowledge = require('./models/Knowledge');
         await Knowledge.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
@@ -510,7 +510,7 @@ app.post('/api/prompt/optimize', authMiddleware, async (req, res) => {
     }
 });
 
-app.get('/api/analytics', authMiddleware, async (req, res) => {
+app.get(['/api/analytics', '/api/v1/analytics'], authMiddleware, async (req, res) => {
     try {
         const stats = await getUserStats(req.user._id);
         res.json(stats);
@@ -519,7 +519,7 @@ app.get('/api/analytics', authMiddleware, async (req, res) => {
     }
 });
 
-app.put('/api/user/keys', authMiddleware, async (req, res) => {
+app.put(['/api/user/keys', '/api/v1/user/keys'], authMiddleware, async (req, res) => {
     try {
         const { keys } = req.body;
         const User = require('./models/User');

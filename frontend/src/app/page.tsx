@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import KnowledgeSection from '@/components/sections/KnowledgeSection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import SettingsSection from '@/components/sections/SettingsSection';
+import WorkflowSection from '@/components/sections/WorkflowSection';
+import ChatForm from '@/components/ChatForm';
 
 export type Message = {
   role: "user" | "assistant";
@@ -351,23 +353,25 @@ export default function Home() {
   const handleEditMessage = async (model: string, index: number, newContent: string) => {
     const truncated = history[model as keyof ChatHistory].slice(0, index);
     setHistory(prev => ({ ...prev, [model]: truncated }));
-    handleSubmit(undefined, newContent, [model]);
+    handleChatSend(newContent, [model]);
   };
 
-  const handleSubmit = async (e?: React.FormEvent, customInput?: string, forceModels?: string[]) => {
-    e?.preventDefault();
-    let finalInput = customInput || input;
+  const handleChatSend = async (chatInput: string, forceModels?: string[], forceImageMode?: boolean, forceSearchMode?: boolean) => {
+    let finalInput = chatInput;
     if (!finalInput.trim() && files.length === 0) return;
 
     let finalSelected = forceModels || [...selectedModels];
     
-    if (!forceModels && input.includes("@")) {
-      const match = input.match(/@(openai|deepseek|meta|gemini)/i);
+    if (!forceModels && chatInput.includes("@")) {
+      const match = chatInput.match(/@(openai|deepseek|meta|gemini)/i);
       if (match) {
         finalSelected = [match[1].toLowerCase()];
-        finalInput = input.replace(match[0], "").trim();
+        finalInput = chatInput.replace(match[0], "").trim();
       }
     }
+
+    const currentImageMode = forceImageMode !== undefined ? forceImageMode : imageMode;
+    const currentSearchMode = forceSearchMode !== undefined ? forceSearchMode : searchMode;
 
     const estimatedCost = finalSelected.length * 4;
     const totalPossibleCredits = tokens + dailyCredits;
@@ -396,8 +400,8 @@ export default function Home() {
         const formData = new FormData();
         formData.append("chatHistory", JSON.stringify(updatedHistory));
         formData.append("bypassModels", JSON.stringify(["openai", "deepseek", "meta", "gemini"].filter(m => m !== model)));
-        formData.append("imageMode", imageMode.toString());
-        formData.append("searchMode", searchMode.toString());
+        formData.append("imageMode", currentImageMode.toString());
+        formData.append("searchMode", currentSearchMode.toString());
         formData.append("smartMode", smartMode);
         files.forEach(f => formData.append("files", f));
 
@@ -639,20 +643,7 @@ export default function Home() {
           {currentTool === 'knowledge' && <KnowledgeSection />}
           {currentTool === 'analytics' && <AnalyticsSection />}
           {currentTool === 'settings' && <SettingsSection />}
-          {currentTool === 'workflows' && (
-              <div className="flex-1 flex items-center justify-center p-20 text-center">
-                  <div className="max-w-md">
-                      <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center text-violet-500 mx-auto mb-6">
-                          <Layers className="w-10 h-10" />
-                      </div>
-                      <h2 className="text-2xl font-black uppercase tracking-tightest mb-2">Workflow Builder</h2>
-                      <p className="text-sm text-neutral-500 font-medium mb-8">Chain multiple AI agents together to automate complex research and writing tasks.</p>
-                      <button className="px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20">
-                          Create First Workflow
-                      </button>
-                  </div>
-              </div>
-          )}
+          {currentTool === 'workflows' && <WorkflowSection />}
           
           {currentTool === 'chat' && (
             <>
@@ -733,86 +724,17 @@ export default function Home() {
                           ))}
                       </div>
 
-                      <form onSubmit={handleSubmit} className="relative group max-w-2xl mx-auto">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-violet-600 rounded-[32px] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                          <div className="relative flex flex-col bg-white dark:bg-[#121214] border border-neutral-200 dark:border-white/10 rounded-[28px] p-2 shadow-2xl">
-                               
-                               {files.length > 0 && (
-                                   <div className="px-4 py-3 flex flex-wrap gap-2 animate-in slide-in-from-top-2 border-b border-neutral-100 dark:border-white/5 mb-1">
-                                       {files.map((f, i) => (
-                                           <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
-                                              <Paperclip className="w-3 h-3 text-blue-500" />
-                                              <span className="text-[10px] font-bold text-blue-600 truncate max-w-[100px]">{f.name}</span>
-                                              <button type="button" onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded">
-                                                  <X className="w-3 h-3 text-blue-500" />
-                                              </button>
-                                           </div>
-                                       ))}
-                                   </div>
-                               )}
-
-                                <div className="flex items-center">
-                                     <div className="flex items-center gap-0.5 sm:gap-1 pl-1 sm:pl-2">
-                                         <label className="p-2 sm:p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl cursor-pointer transition-colors">
-                                             <input 
-                                                 type="file" 
-                                                 multiple
-                                                 className="hidden" 
-                                                 onChange={(e) => {
-                                                     const newFiles = Array.from(e.target.files || []);
-                                                     setFiles(prev => [...prev, ...newFiles].slice(0, 10));
-                                                 }}
-                                             />
-                                             <Paperclip className={`w-4 h-4 sm:w-5 sm:h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
-                                         </label>
-                                         <button 
-                                             type="button"
-                                             onClick={handleVoiceInput}
-                                             className="p-2 sm:p-3 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-2xl text-neutral-400 hover:text-blue-500 transition-colors"
-                                         >
-                                             <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
-                                         </button>
-                                     </div>
-                                     <div className="flex-1 flex items-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full px-4 py-1.5 shadow-sm focus-within:ring-2 ring-blue-500/20 transition-all">
-                
-                <div className="flex items-center gap-1 mr-3 pr-3 border-r border-black/5 dark:border-white/10">
-                    <button 
-                        onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
-                        className={`p-2 rounded-full transition-all ${searchMode ? 'bg-blue-500 text-white shadow-lg' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
-                        title="Neural Deep Search"
-                    >
-                        <Clock className={`w-4 h-4 ${searchMode ? 'animate-spin-slow' : ''}`} />
-                    </button>
-                    <button 
-                        onClick={() => { setImageMode(!imageMode); setSearchMode(false); }}
-                        className={`p-2 rounded-full transition-all ${imageMode ? 'bg-amber-500 text-white shadow-lg' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
-                        title="Autonomous Imaging"
-                    >
-                        <Zap className={`w-4 h-4 ${imageMode ? 'animate-pulse' : ''}`} />
-                    </button>
-                </div>
-
-                <input
-                  type="text"
-                  placeholder={imageMode ? "Describe the image you want to create..." : searchMode ? "What do you want to find on the live web?" : "Command the Neural Core... (use @model to solo)"}
-                  className="flex-1 bg-transparent border-none outline-none text-sm font-medium py-2 placeholder:text-neutral-400"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
-                />
-                                     </div>
-                                     <button type="submit" className="p-3 sm:p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-700 transition-all group-hover:scale-105 active:scale-95">
-                                         <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
-                                     </button>
-                                </div>
-                          </div>
-                      </form>
-
-                      <div className="mt-4 text-center">
-                        <p className="text-[10px] font-bold text-neutral-400">
-                          This request will cost <span className="text-blue-500">~{selectedModels.length * 4} credits</span>
-                        </p>
-                      </div>
+                      <ChatForm 
+                        onSend={(input, imageMode, searchMode, models) => {
+                            setImageMode(imageMode);
+                            setSearchMode(searchMode);
+                            setSelectedModels(models);
+                            handleChatSend(input, models, imageMode, searchMode);
+                        }}
+                        loading={loading}
+                        dailyCredits={dailyCredits}
+                        tokens={tokens}
+                      />
 
                       <div className="mt-16 pb-12 flex flex-col items-center gap-8">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Powered by Neural Core Engines</p>
@@ -993,7 +915,7 @@ export default function Home() {
                            ].map((hook, i) => (
                              <button 
                                 key={i}
-                                onClick={() => handleSubmit(undefined, hook.prompt)}
+                                onClick={() => handleChatSend(hook.prompt)}
                                 className="flex items-center gap-2.5 px-6 py-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm group"
                              >
                                {hook.icon}
@@ -1067,80 +989,23 @@ export default function Home() {
               </div>
           )}
           
-          {hasStartedChat && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-50 via-neutral-50/90 dark:from-[#09090b] dark:via-[#09090b]/90 z-40">
-             <div className="max-w-4xl mx-auto relative flex flex-col gap-3">
-
-                 <div className="flex flex-wrap items-center justify-between gap-2">
-                     <div className="flex items-center gap-2">
-                         <button type="button" onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
-                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${searchMode ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-blue-500/30'}`}>
-                             <Clock className="w-3 h-3" /> {searchMode ? 'Search ON' : 'Search'}
-                         </button>
-                         <button type="button" onClick={() => { setImageMode(!imageMode); setSearchMode(false); }}
-                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${imageMode ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20' : 'bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-amber-500/30'}`}>
-                             <Zap className="w-3 h-3" /> {imageMode ? 'Image ON' : 'Image'}
-                         </button>
-                     </div>
-                     <div className="flex items-center gap-1.5">
-                         {["all","openai","deepseek","meta","gemini"].map((m) => (
-                             <button key={m} onClick={() => toggleModel(m)}
-                                 className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border ${(m === 'all' && selectedModels.length === 4) || selectedModels.includes(m) ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20" : "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-neutral-300 dark:hover:border-white/20"}`}>
-                                 {m.toUpperCase()}
-                             </button>
-                         ))}
-                     </div>
-                 </div>
-
-                 {/* Row 2: Chat Input Form */}
-                 <form onSubmit={handleSubmit} className="relative flex flex-col bg-white dark:bg-[#18181b] border border-neutral-200 dark:border-white/10 rounded-[32px] shadow-2xl p-2">
-                     {files.length > 0 && (
-                         <div className="px-4 py-3 flex flex-wrap gap-2 border-b border-neutral-100 dark:border-white/5 mb-1">
-                             {files.map((f, i) => (
-                                 <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
-                                    <Paperclip className="w-3 h-3 text-blue-500" />
-                                    <span className="text-[10px] font-bold text-blue-600 truncate max-w-[100px]">{f.name}</span>
-                                    <button type="button" onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="p-0.5 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded"><X className="w-3 h-3 text-blue-500" /></button>
-                                 </div>
-                             ))}
-                         </div>
-                     )}
-                     <div className="flex items-center">
-                         <div className="flex items-center gap-1 pl-1">
-                             <label className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full cursor-pointer transition-colors">
-                                 <input type="file" multiple className="hidden" onChange={(e) => { const f = Array.from(e.target.files || []); setFiles(prev => [...prev, ...f].slice(0,10)); }} />
-                                 <Paperclip className={`w-5 h-5 ${files.length > 0 ? 'text-blue-500' : 'text-neutral-400'}`} />
-                             </label>
-                             <button type="button" onClick={handleVoiceInput} className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors">
-                                 <Mic className="w-5 h-5" />
-                             </button>
-                             <button type="button" onClick={handleOptimizePrompt} className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors">
-                                 <Sparkles className="w-5 h-5" />
-                             </button>
-                             <button 
-                                type="button" 
-                                onClick={() => setUseKnowledge(!useKnowledge)} 
-                                className={`p-2.5 rounded-full transition-colors ${useKnowledge ? 'text-emerald-500 bg-emerald-500/10' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
-                              >
-                                  <Book className="w-5 h-5" />
-                              </button>
-                         </div>
-                         <input
-                             type="text"
-                             placeholder={imageMode ? 'Describe image to generate...' : searchMode ? 'Search mode active — ask anything with live context...' : (files.length > 0 ? `${files.length} files attached...` : "Continue the conversation...")}
-                             value={input}
-                             onChange={(e) => setInput(e.target.value)}
-                             onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
-                             className="flex-1 bg-transparent border-none outline-none px-4 text-base font-medium"
-                         />
-                         <button type="submit" disabled={loading} className="p-3 bg-blue-600 rounded-full text-white hover:bg-blue-700 disabled:opacity-30 transition-all active:scale-90">
-                             <ArrowUp className="w-5 h-5" />
-                         </button>
-                     </div>
-                 </form>
-             </div>
-          </div>
-      )}
+          {hasStartedChat && currentTool === 'chat' && (
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-50 via-neutral-50/90 dark:from-[#09090b] dark:via-[#09090b]/90 z-40">
+                  <div className="max-w-4xl mx-auto">
+                      <ChatForm 
+                        onSend={(input, imageMode, searchMode, models) => {
+                            setImageMode(imageMode);
+                            setSearchMode(searchMode);
+                            setSelectedModels(models);
+                            handleChatSend(input, models, imageMode, searchMode);
+                        }}
+                        loading={loading}
+                        dailyCredits={dailyCredits}
+                        tokens={tokens}
+                      />
+                  </div>
+              </div>
+          )}
 
       {/* Credit Top-Up Modal */}
       {showCreditModal && (

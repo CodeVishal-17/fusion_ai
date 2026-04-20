@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Message } from "@/app/page";
-import { Bot, Sparkles, Cpu, Edit3, Check, X as CloseX, User, ChevronDown, Volume2, Zap, Download } from "lucide-react";
+import { Bot, Sparkles, Cpu, Edit3, Check, X as CloseX, User, ChevronDown, Volume2, Zap, Download, Clock, Coins, Book } from "lucide-react";
 
 interface ResponseCardProps {
   modelName: string;

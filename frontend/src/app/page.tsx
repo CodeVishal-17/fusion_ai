@@ -533,9 +533,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`self-start mt-20 bg-white dark:bg-[#0c0c0e] border border-black/10 dark:border-white/10 rounded-r-xl p-2 shadow-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-all ${sidebarOpen ? 'ml-0' : 'ml-0'}`}>
-          <PanelLeft className="w-4 h-4" />
-        </button>
       </div>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -562,65 +559,36 @@ export default function Home() {
       <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
         <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-              <div className="flex flex-col items-start sm:items-end">
-                <div className="flex items-center bg-white dark:bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-neutral-200 dark:border-white/5">
-                    <div className="flex flex-col items-start mr-3 sm:mr-4">
-                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Productivity</span>
-                        <div className="flex items-center">
-                            <Zap className="w-3 h-3 text-blue-500 mr-1.5" />
-                            <span className="text-xs sm:text-sm font-bold mr-2">🔥 {user?.streak || 0}</span>
-                            <span className="text-[8px] font-medium text-neutral-400">({(user?.totalQueries || 0) * 2}m saved)</span>
-                        </div>
-                    </div>
-                    <div className="mx-2 w-[1px] h-5 sm:h-6 bg-neutral-200 dark:bg-white/10" />
-                    <div className="flex flex-col items-start mr-3 sm:mr-4">
-                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Credits</span>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center">
-                                <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 mr-1 sm:mr-1.5" />
-                                <span className={`font-bold text-xs sm:text-sm ${tokens + dailyCredits < 15 ? 'text-red-500 animate-pulse' : ''}`}>
-                                    {tokens + dailyCredits} 
-                                    <span className="text-[10px] opacity-50 font-medium ml-1">(~{Math.floor((tokens + dailyCredits) / 5)})</span>
-                                </span>
-                            </div>
-                            {tokens + dailyCredits < 15 && (
-                                <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-red-500/20">Low</span>
-                            )}
-                        </div>
-                        {dailyCredits > 0 && <p className="text-[7px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Free Reset Active ✨</p>}
-                    </div>
-                    <div className="mx-2 w-[1px] h-5 sm:h-6 bg-neutral-200 dark:bg-white/10" />
-                    <div className="flex flex-col items-start">
-                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Reset</span>
-                        <div className="flex items-center">
-                            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500 mr-1 sm:mr-1.5" />
-                            <span className="font-mono text-[9px] sm:text-[10px] font-bold">{timeLeft}</span>
-                        </div>
-                    </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 sm:hidden">
-                <button onClick={() => router.push("/profile")} className="p-2 rounded-lg bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 text-neutral-500">
-                    <User className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg bg-white dark:bg-white/5 border border-black/10 dark:border-white/10">
-                    {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                </button>
-                <button onClick={logout} className="p-2 rounded-lg border border-black/10 dark:border-white/10 text-red-500">
-                    <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
+             <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
+                 <div className="flex items-center gap-4">
+                     <div className="flex items-center gap-2 pr-4 border-r border-black/5 dark:border-white/10">
+                         <Zap className="w-3.5 h-3.5 text-blue-500" />
+                         <span className="text-xs font-black">{user?.streak || 0}</span>
+                     </div>
+                     <div className="flex items-center gap-2 pr-4 border-r border-black/5 dark:border-white/10">
+                         <Coins className="w-3.5 h-3.5 text-amber-500" />
+                         <span className="text-xs font-black">{tokens + dailyCredits}</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                         <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                         <span className="text-[10px] font-bold font-mono opacity-60">{timeLeft}</span>
+                     </div>
+                 </div>
+             </div>
           </div>
-
+          
           <div className="flex items-center gap-4 group cursor-pointer sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-             <h1 className="text-lg sm:text-xl font-black tracking-tighter flex items-center gap-2">
-                <Zap className="w-5 h-5 text-blue-500 fill-blue-500/20" />
-                AI<span className="text-blue-500">Fusion</span>
+             <h1 className="text-xl sm:text-2xl font-black tracking-tighter flex items-center gap-2.5">
+                <Zap className="w-6 h-6 text-blue-600 fill-blue-600/20" />
+                AI<span className="text-blue-600">Fusion</span>
              </h1>
           </div>
           
           <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} className={`p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/10 transition-all ${sidebarOpen ? 'hidden' : 'flex'}`}>
+              <PanelLeft className="w-4 h-4" />
+            </button>
+            <div className="mx-1 w-[1px] h-4 bg-black/5 dark:bg-white/10" />
             <button onClick={() => setShowModelRequestModal(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-violet-500/10 text-violet-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-500/20 transition-all border border-violet-500/20">
               <Cpu className="w-3.5 h-3.5" /> Request Model
             </button>
@@ -647,9 +615,9 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden relative">
+      <main className="flex-1 overflow-y-auto relative custom-scrollbar">
           {!hasStartedChat ? (
-              <div className="h-full flex flex-col items-center justify-center px-6 animate-in fade-in duration-1000">
+              <div className="min-h-full flex flex-col items-center justify-center px-6 py-12 animate-in fade-in duration-1000">
                   <div className="max-w-3xl w-full text-center">
                       <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent px-4">
                           Universal AI Intelligence.
@@ -658,20 +626,21 @@ export default function Home() {
 
                       <div className="mb-10 px-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Why AIFusion over ChatGPT or Gemini?</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left max-w-2xl mx-auto">
                           {[
-                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: `Best Now: ${liveData.bestModel} (${liveData.bestScore} score)`, color: "amber" },
-                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: `Global Agreement: ${liveData.avgAgreement} models agree`, color: "emerald" },
-                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer Crown", desc: `Winner Logic: ${liveData.bestModel} leads today`, color: "blue" },
-                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "AI Debate Mode", desc: "Live: Models challenging each other's logic", color: "violet" },
-                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Fastest Model", desc: `${liveData.fastestModel}: ${liveData.fastestTime} response time`, color: "pink" },
-                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Save Money", desc: "Access $100/mo value for $0.05/prompt", color: "orange" },
+                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: "Comparative synthesis", color: "amber" },
+                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: "Cross-model consensus", color: "emerald" },
+                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer", desc: "Logic-based ranking", color: "blue" },
+                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "Battle Mode", desc: "Models challenging logic", color: "violet" },
+                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Fastest Speed", desc: "Sub-second responses", color: "pink" },
+                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Cost Efficiency", desc: "90% cheaper access", color: "orange" },
                           ].map((f, i) => (
-                            <div key={i} className={`p-3.5 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default relative overflow-hidden`}>
-                              <div className="mb-2">{f.icon}</div>
-                              <p className="text-xs font-black mb-1">{f.title}</p>
-                              <p className="text-[10px] text-neutral-500 font-medium leading-relaxed">{f.desc}</p>
-                              {i < 3 && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />}
+                            <div key={i} className={`p-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default relative overflow-hidden`}>
+                              <div className="flex items-center gap-2.5 mb-1.5">
+                                {f.icon}
+                                <p className="text-[11px] font-black">{f.title}</p>
+                              </div>
+                              <p className="text-[9px] text-neutral-500 font-medium leading-tight">{f.desc}</p>
                             </div>
                           ))}
                         </div>
@@ -826,11 +795,14 @@ export default function Home() {
                         </p>
                       </div>
 
-                      <div className="mt-12 flex items-center justify-center gap-10 hover:scale-105 transition-transform duration-700">
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" className="h-8 drop-shadow-md" alt="openai" />
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" className="h-8 drop-shadow-md" alt="gemini" />
-                          <img src="https://www.deepseek.com/favicon.ico" className="h-8 drop-shadow-md" alt="deepseek" />
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" className="h-6 drop-shadow-md" alt="meta" />
+                      <div className="mt-16 pb-12 flex flex-col items-center gap-8">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Powered by Neural Core Engines</p>
+                        <div className="flex items-center justify-center gap-12 opacity-40 hover:opacity-100 transition-all duration-700 hover:scale-105">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="openai" />
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="gemini" />
+                            <img src="https://www.deepseek.com/favicon.ico" className="h-10 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="deepseek" />
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" className="h-8 grayscale hover:grayscale-0 transition-all drop-shadow-md" alt="meta" />
+                        </div>
                       </div>
                   </div>
               </div>

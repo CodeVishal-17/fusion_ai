@@ -16,23 +16,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           password: { label: "Password", type: "password" }
         },
         async authorize(credentials) {
-            // This is a placeholder for the credentials logic
-            // The actual login happens via the backend API call in login/page.tsx
-            // But we need this provider to exist for next-auth to work
             if (credentials?.username && credentials?.password) {
                 return { id: "user", name: "User", email: credentials.username as string };
             }
             return null;
         }
     }),
-    GitHub({
-        clientId: process.env.GITHUB_ID || 'placeholder',
-        clientSecret: process.env.GITHUB_SECRET || 'placeholder'
-    }),
-    Google({
-        clientId: process.env.GOOGLE_ID || 'placeholder',
-        clientSecret: process.env.GOOGLE_SECRET || 'placeholder'
-    }),
+    // Only include social providers if their IDs are actually present
+    ...(process.env.GITHUB_ID ? [
+      GitHub({
+          clientId: process.env.GITHUB_ID,
+          clientSecret: process.env.GITHUB_SECRET
+      })
+    ] : []),
+    ...(process.env.GOOGLE_ID ? [
+      Google({
+          clientId: process.env.GOOGLE_ID,
+          clientSecret: process.env.GOOGLE_SECRET
+      })
+    ] : []),
   ],
   callbacks: {
     async session({ session, token }) {

@@ -198,7 +198,6 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             const imgResults = { openai: openaiImg, deepseek: deepseekImg, meta: metaImg, gemini: geminiImg };
 
             // Deduct credits
-            let user = req.user;
             let creditsToDeduct = totalCost;
             if (user.dailyFreeCredits >= creditsToDeduct) {
                 user.dailyFreeCredits -= creditsToDeduct;
@@ -306,7 +305,6 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         };
 
         // --- 📊 DEDUCT CREDITS & LOG USAGE ---
-        let user = req.user;
         let creditsToDeduct = totalCost;
 
         // Deduct from daily free first

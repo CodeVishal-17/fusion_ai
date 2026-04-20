@@ -7,6 +7,9 @@ import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu } from "lucide-react";
 import { useRouter } from "next/navigation";
+import KnowledgeSection from '@/components/sections/KnowledgeSection';
+import AnalyticsSection from '@/components/sections/AnalyticsSection';
+import SettingsSection from '@/components/sections/SettingsSection';
 
 export type Message = {
   role: "user" | "assistant";
@@ -104,6 +107,11 @@ export default function Home() {
   const [loadingModels, setLoadingModels] = useState<string[]>([]);
   const [resolvedDebate, setResolvedDebate] = useState<string | null>(null);
   const [resolvingDebate, setResolvingDebate] = useState(false);
+  const [useKnowledge, setUseKnowledge] = useState(false);
+  const [optimizedPrompt, setOptimizedPrompt] = useState<string | null>(null);
+  const [currentTool, setCurrentTool] = useState<'chat' | 'knowledge' | 'workflows' | 'analytics' | 'settings'>('chat');
+  const [sources, setSources] = useState<{ title: string; url: string; snippet: string }[]>([]);
+  const [userVote, setUserVote] = useState<string | null>(null);
   const [liveData, setLiveData] = useState({
     bestModel: 'OpenAI',
     bestScore: '94%',
@@ -142,6 +150,19 @@ export default function Home() {
       } else { setModelReqStatus('error'); }
     } catch { setModelReqStatus('error'); }
     finally { setModelReqLoading(false); }
+  };
+
+  const handleOptimizePrompt = async () => {
+    if (!input.trim()) return;
+    try {
+        const res = await fetch("/api/v1/optimize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+            body: JSON.stringify({ prompt: input })
+        });
+        const data = await res.json();
+        if (data.optimized) setInput(data.optimized);
+    } catch (e) { console.error(e); }
   };
 
   const startNewChat = () => {
@@ -364,7 +385,6 @@ export default function Home() {
     const resultsAccumulator: Record<string, any> = {};
     const modelsToRun = [...finalSelected];
 
-    // Fire all model requests in parallel for "Independent Loading"
     const modelPromises = modelsToRun.map(async (model) => {
       try {
         const updatedHistory = { ...history };
@@ -388,11 +408,14 @@ export default function Home() {
         });
 
         const data = await res.json();
+        setLoading(false);
+        setSources(data.sources || []);
+        setUserVote(null); // Reset vote for new turn
+        
         if (data.error) throw new Error(data.error);
 
         resultsAccumulator[model] = data[model];
         
-        // Update history and metrics for THIS model immediately
         setHistory(prev => ({
           ...prev,
           [model]: [
@@ -413,7 +436,6 @@ export default function Home() {
       }
     });
 
-    // Once all models are done (or failed), run analysis
     Promise.all(modelPromises).then(async (results) => {
       setLoading(false);
       setFiles([]);
@@ -450,17 +472,39 @@ export default function Home() {
   return (
     <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
 
-      {/* ===== COLLAPSIBLE SIDEBAR ===== */}
       <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out flex`}>
-        {/* Sidebar Panel */}
         <div className={`${sidebarOpen ? 'w-72' : 'w-0'} overflow-hidden bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300`}>
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-none">
-            <h2 className="text-sm font-black uppercase tracking-widest">Chat History</h2>
+            <h2 className="text-sm font-black uppercase tracking-widest">Neural Command</h2>
             <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5"><X className="w-4 h-4" /></button>
           </div>
-          <button onClick={startNewChat} className="mx-4 mt-4 flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex-none">
-            <Plus className="w-4 h-4" /> New Chat
-          </button>
+          
+          <div className="px-4 pt-4 space-y-1 flex-none">
+            {[
+              { id: 'chat', label: 'Neural Chat', icon: <MessageSquare className="w-4 h-4" /> },
+              { id: 'knowledge', label: 'Knowledge Base', icon: <Book className="w-4 h-4" /> },
+              { id: 'workflows', label: 'AI Workflows', icon: <Layers className="w-4 h-4" /> },
+              { id: 'analytics', label: 'Usage Analytics', icon: <BarChart3 className="w-4 h-4" /> },
+              { id: 'settings', label: 'Power Settings', icon: <Settings className="w-4 h-4" /> }
+            ].map(tool => (
+              <button 
+                key={tool.id} 
+                onClick={() => { setCurrentTool(tool.id as any); if (tool.id === 'chat') setHasStartedChat(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${currentTool === tool.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
+              >
+                {tool.icon}
+                {tool.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mx-4 my-4 h-[1px] bg-black/5 dark:bg-white/5 flex-none" />
+
+          {currentTool === 'chat' && (
+            <button onClick={startNewChat} className="mx-4 flex items-center gap-2 px-4 py-3 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex-none">
+              <Plus className="w-4 h-4" /> New Intelligence Session
+            </button>
+          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-3">
             {chatHistory.length > 0 && (
               <div className="mb-4">
@@ -489,14 +533,32 @@ export default function Home() {
             ))}
           </div>
         </div>
-        {/* Toggle Tab */}
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`self-start mt-20 bg-white dark:bg-[#0c0c0e] border border-black/10 dark:border-white/10 rounded-r-xl p-2 shadow-lg hover:bg-neutral-50 dark:hover:bg-white/5 transition-all ${sidebarOpen ? 'ml-0' : 'ml-0'}`}>
           <PanelLeft className="w-4 h-4" />
         </button>
       </div>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-      {/* Header */}
+        {currentTool === 'knowledge' && <KnowledgeSection />}
+        {currentTool === 'analytics' && <AnalyticsSection />}
+        {currentTool === 'settings' && <SettingsSection />}
+        {currentTool === 'workflows' && (
+            <div className="flex-1 flex items-center justify-center p-20 text-center">
+                <div className="max-w-md">
+                    <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center text-violet-500 mx-auto mb-6">
+                        <Layers className="w-10 h-10" />
+                    </div>
+                    <h2 className="text-2xl font-black uppercase tracking-tightest mb-2">Workflow Builder</h2>
+                    <p className="text-sm text-neutral-500 font-medium mb-8">Chain multiple AI agents together to automate complex research and writing tasks.</p>
+                    <button className="px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20">
+                        Create First Workflow
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {currentTool === 'chat' && (
+          <>
       <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
         <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
@@ -594,7 +656,6 @@ export default function Home() {
                       </h2>
                       <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-6 sm:mb-8 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
 
-                      {/* WHY AIFUSION SECTION */}
                       <div className="mb-10 px-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Why AIFusion over ChatGPT or Gemini?</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
@@ -616,8 +677,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Model Selector Chips */}
-
                       <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
                           {["openai", "deepseek", "meta", "gemini"].map((m) => (
                               <button
@@ -635,7 +694,6 @@ export default function Home() {
                           ))}
                       </div>
 
-                      {/* Smart Mode Selector */}
                       <div className="mb-8 flex flex-col items-center">
                         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Select Intelligence Mode</p>
                         <div className="flex flex-wrap justify-center gap-2">
@@ -674,7 +732,6 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* Expert Prompt Library */}
                       <div className="flex flex-wrap justify-center gap-2 mb-6 animate-in slide-in-from-top-4 duration-700 delay-200">
                           {templates.map((t, i) => (
                               <button 
@@ -688,12 +745,10 @@ export default function Home() {
                           ))}
                       </div>
 
-                      {/* Main Search with Multi-File Attachment */}
                       <form onSubmit={handleSubmit} className="relative group max-w-2xl mx-auto">
                           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-violet-600 rounded-[32px] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
                           <div className="relative flex flex-col bg-white dark:bg-[#121214] border border-neutral-200 dark:border-white/10 rounded-[28px] p-2 shadow-2xl">
                                
-                               {/* Multi-File Preview inside Search */}
                                {files.length > 0 && (
                                    <div className="px-4 py-3 flex flex-wrap gap-2 animate-in slide-in-from-top-2 border-b border-neutral-100 dark:border-white/5 mb-1">
                                        {files.map((f, i) => (
@@ -732,7 +787,6 @@ export default function Home() {
                                      </div>
                                      <div className="flex-1 flex items-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full px-4 py-1.5 shadow-sm focus-within:ring-2 ring-blue-500/20 transition-all">
                 
-                {/* Mode Toggles */}
                 <div className="flex items-center gap-1 mr-3 pr-3 border-r border-black/5 dark:border-white/10">
                     <button 
                         onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
@@ -783,7 +837,6 @@ export default function Home() {
           ) : (
               <div className="h-full overflow-y-auto custom-scrollbar px-6 py-8 pb-40">
                   <div className="max-w-[1600px] mx-auto">
-                    {/* --- 🧠 AI FUSION ANSWER (Consensus Analysis) --- */}
                     {analysis && (
                       <div className="max-w-[98%] mx-auto mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="bg-white/80 dark:bg-[#0c0c0e] backdrop-blur-2xl border border-blue-500/30 rounded-[32px] p-5 sm:p-8 shadow-2xl relative overflow-hidden group">
@@ -801,7 +854,6 @@ export default function Home() {
                                         </div>
                                     </div>
                                     
-                                    {/* Agreement Indicator */}
                                     <div className="flex items-center gap-2">
                                         <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${analysis.disagreement ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
                                             {analysis.disagreement ? <X className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
@@ -868,8 +920,6 @@ export default function Home() {
                         </div>
                     )}
 
-                    {/* Global Multi-File Preview (Optional, can keep it only inside input) */}
-
                     <div className={`grid gap-8 transition-all duration-700 ${
                         selectedModels.length === 1 ? 'grid-cols-1 max-w-4xl mx-auto' :
                         selectedModels.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-6xl mx-auto' :
@@ -877,30 +927,27 @@ export default function Home() {
                         'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
                     }`}>
                         {["openai", "deepseek", "meta", "gemini"]
-                            .sort((a, b) => (analysis?.bestModel === a ? -1 : analysis?.bestModel === b ? 1 : 0))
-                            .map((key) => (
-                             selectedModels.includes(key) && (
+                            .map((model) => (
+                             selectedModels.includes(model) && (
                                 <ResponseCard
-                                    key={key}
-                                    modelName={key.toUpperCase()}
-                                    provider={key as any}
-                                    messages={history[key as keyof ChatHistory]}
-                                    loading={loadingModels.includes(key)}
+                                    key={model}
+                                    modelName={model.charAt(0).toUpperCase() + model.slice(1)}
+                                    provider={model as any}
+                                    messages={history[model as keyof typeof history]}
+                                    loading={loadingModels.includes(model)}
                                     onFocus={() => {}}
-                                    onEditMessage={(index, content) => handleEditMessage(key, index, content)}
-                                    isBest={analysis?.bestModel === key}
-                                    metrics={{
-                                        ...metrics[key],
-                                        score: analysis?.scores?.[key]
-                                    }}
-                                    onSolo={() => handleSolo(key)}
-                                    cost={key === 'openai' ? 5 : key === 'gemini' ? 4 : 3}
+                                    onEditMessage={(index, content) => handleEditMessage(model, index, content)}
+                                    isBest={analysis?.bestModel?.toLowerCase() === model}
+                                    sources={model === 'openai' ? sources : []}
+                                    onVote={(m) => setUserVote(m.toLowerCase())}
+                                    userVote={userVote}
+                                    onSolo={() => handleSolo(model)}
+                                    cost={model === 'openai' ? 5 : model === 'gemini' ? 4 : 3}
                                  />
-                              )
+                             )
                         ))}
                     </div>
 
-                    {/* AI DEBATE BUTTON + PANEL */}
                     {hasStartedChat && !loading && !imageMode && (
                       <div className="mt-8 mb-4 flex justify-center">
                         {!showDebate ? (
@@ -944,7 +991,6 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* EXPLORATION HOOKS */}
                     {hasStartedChat && !loading && (
                       <div className="mt-12 flex flex-col items-center gap-4 animate-in fade-in duration-1000">
                         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Intelligent Next Steps</p>
@@ -967,7 +1013,6 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* THE ULTIMATE SYNTHESIS (Master Response) */}
                     {analysis?.ultimateSynthesis && (
                         <div className="mt-12 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
                              <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-1 rounded-[40px] shadow-2xl shadow-blue-500/20">
@@ -1032,12 +1077,10 @@ export default function Home() {
           )}
       </main>
 
-      {/* Floating Chat Bar (Only after start) */}
       {hasStartedChat && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-50 via-neutral-50/90 dark:from-[#09090b] dark:via-[#09090b]/90 z-40">
              <div className="max-w-4xl mx-auto relative flex flex-col gap-3">
 
-                 {/* Row 1: Mode Toggles + Model Chips */}
                  <div className="flex flex-wrap items-center justify-between gap-2">
                      <div className="flex items-center gap-2">
                          <button type="button" onClick={() => { setSearchMode(!searchMode); setImageMode(false); }}
@@ -1081,6 +1124,16 @@ export default function Home() {
                              <button type="button" onClick={handleVoiceInput} className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors">
                                  <Mic className="w-5 h-5" />
                              </button>
+                             <button type="button" onClick={handleOptimizePrompt} className="p-2.5 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full text-neutral-400 hover:text-blue-500 transition-colors">
+                                 <Sparkles className="w-5 h-5" />
+                             </button>
+                             <button 
+                                type="button" 
+                                onClick={() => setUseKnowledge(!useKnowledge)} 
+                                className={`p-2.5 rounded-full transition-colors ${useKnowledge ? 'text-emerald-500 bg-emerald-500/10' : 'text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
+                              >
+                                  <Book className="w-5 h-5" />
+                              </button>
                          </div>
                          <input
                              type="text"

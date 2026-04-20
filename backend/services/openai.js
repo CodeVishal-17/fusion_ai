@@ -10,11 +10,18 @@ const officialOpenAI = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-async function callOpenAI(messages) {
+async function callOpenAI(messages, apiKey = null) {
     const startTime = performance.now();
     try {
-        if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
-        const response = await openai.chat.completions.create({
+        const key = apiKey || process.env.OPENAI_API_KEY;
+        if (!key) throw new Error("Missing OPENAI_API_KEY");
+        
+        const client = new OpenAI({
+            apiKey: key,
+            baseURL: apiKey ? undefined : "https://models.inference.ai.azure.com",
+        });
+
+        const response = await client.chat.completions.create({
             model: "gpt-4o",
             messages: messages,
         });

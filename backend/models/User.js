@@ -16,6 +16,17 @@ const userSchema = new mongoose.Schema({
     streak: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
     totalQueries: { type: Number, default: 0 },
+    apiKeys: {
+        openai: { type: String },
+        gemini: { type: String },
+        anthropic: { type: String },
+        perplexity: { type: String }
+    },
+    preferences: {
+        tone: { type: String, default: 'balanced' },
+        expertise: { type: String, default: 'general' },
+        memoryEnabled: { type: Boolean, default: true }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

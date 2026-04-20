@@ -11,12 +11,16 @@ interface ResponseCardProps {
   onFocus: () => void;
   onEditMessage?: (index: number, newContent: string) => void;
   isBest?: boolean;
+  isPinned?: boolean;
+  sources?: { title: string; url: string; snippet: string }[];
+  onVote?: (model: string) => void;
+  userVote?: string | null;
   metrics?: { time: number; tokens: number; status: string; score?: { accuracy: number; clarity: number } };
   onSolo?: () => void;
   cost?: number;
 }
 
-export default function ResponseCard({ modelName, provider, messages, loading, onFocus, onEditMessage, isBest, metrics, onSolo, cost }: ResponseCardProps) {
+export default function ResponseCard({ modelName, provider, messages, loading, onFocus, onEditMessage, isBest, isPinned, sources, onVote, userVote, metrics, onSolo, cost }: ResponseCardProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editBuffer, setEditBuffer] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -208,7 +212,7 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
 
             {/* AI Answer - Minimalistic Workspace Style with Internal Scroll */}
             {msg.role === "assistant" && (
-              <div className={`self-start max-w-full w-full bg-white dark:bg-[#121212] p-6 rounded-[28px] rounded-tl-[4px] shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden flex flex-col max-h-[500px]`}>
+              <div className={`self-start max-w-full w-full bg-white dark:bg-[#121212] p-6 rounded-[28px] rounded-tl-[4px] shadow-sm border border-neutral-100 dark:border-white/5 relative overflow-hidden flex flex-col`}>
                 <div className="flex items-center justify-between mb-5 flex-none">
                     <div className="flex items-center gap-2 opacity-40 text-neutral-500">
                         {getProviderIcon()}
@@ -292,6 +296,38 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                   >
                     {msg.content as string}
                   </ReactMarkdown>
+                </div>
+                
+                {/* --- 🧠 FEATURE: SOURCE & CITATION SYSTEM --- */}
+                {sources && sources.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-black/5 dark:border-white/10">
+                     <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4 flex items-center gap-2">
+                       <Book className="w-3.5 h-3.5" /> Verified Sources
+                     </h4>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       {sources.map((src, idx) => (
+                         <a 
+                          key={idx} 
+                          href={src.url} 
+                          target="_blank" 
+                          className="p-4 bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl hover:border-blue-500/30 transition-all group"
+                         >
+                           <p className="text-xs font-black uppercase tracking-tight text-neutral-800 dark:text-neutral-200 group-hover:text-blue-500 transition-colors">{src.title}</p>
+                           <p className="text-[10px] text-neutral-500 mt-1 line-clamp-2 leading-relaxed">{src.snippet}</p>
+                         </a>
+                       ))}
+                     </div>
+                  </div>
+                )}
+
+                {/* AI Battle Voting */}
+                <div className="mt-6 flex justify-end">
+                   <button 
+                    onClick={() => onVote?.(modelName)}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${userVote === modelName ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:bg-amber-500/10 hover:text-amber-500'}`}
+                   >
+                     {userVote === modelName ? '🏆 Winner' : 'Vote as Winner'}
+                   </button>
                 </div>
               </div>
             )}

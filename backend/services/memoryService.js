@@ -28,4 +28,18 @@ async function generateTitle(prompt) {
     }
 }
 
-module.exports = { generateTitle };
+/**
+ * Injects user personality/preferences into the system prompt.
+ */
+function getMemoryPrompt(user) {
+    if (!user || !user.preferences || !user.preferences.memoryEnabled) return "";
+    
+    return `
+    --- USER PROFILE & MEMORY ---
+    Preferred Tone: ${user.preferences.tone}
+    Expertise Level: ${user.preferences.expertise}
+    Always remember these preferences when crafting your response.
+    `;
+}
+
+module.exports = { generateTitle, getMemoryPrompt };

@@ -31,8 +31,10 @@ export type ChatHistory = {
 export default function Home() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
   
+  // --- 🧊 CORE STATE ---
   const [user, setUser] = useState<any>(null);
   const [tokens, setTokens] = useState<number>(0);
   const [dailyCredits, setDailyCredits] = useState<number>(0);
@@ -60,18 +62,15 @@ export default function Home() {
   const [searchMode, setSearchMode] = useState(false);
   const [smartMode, setSmartMode] = useState<string>("general");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sources, setSources] = useState<{ title: string; url: string; snippet: string }[]>([]);
+  const [userVote, setUserVote] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
   const [showModelRequestModal, setShowModelRequestModal] = useState(false);
   const [modelReqName, setModelReqName] = useState('');
   const [modelReqMsg, setModelReqMsg] = useState('');
   const [modelReqStatus, setModelReqStatus] = useState('');
   const [modelReqLoading, setModelReqLoading] = useState(false);
+  
   const [debateResults, setDebateResults] = useState<Record<string,any>>({});
   const [debateLoading, setDebateLoading] = useState(false);
   const [showDebate, setShowDebate] = useState(false);
@@ -80,19 +79,7 @@ export default function Home() {
   const [resolvingDebate, setResolvingDebate] = useState(false);
   const [useKnowledge, setUseKnowledge] = useState(false);
   const [optimizedPrompt, setOptimizedPrompt] = useState<string | null>(null);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
-  const [sidebarHovered, setSidebarHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-  const [currentTool, setCurrentTool] = useState<'chat' | 'knowledge' | 'workflows' | 'analytics' | 'settings'>('chat');
-  const [sources, setSources] = useState<{ title: string; url: string; snippet: string }[]>([]);
-  const [userVote, setUserVote] = useState<string | null>(null);
   const [liveData, setLiveData] = useState({
     bestModel: 'OpenAI',
     bestScore: '94%',
@@ -100,6 +87,49 @@ export default function Home() {
     fastestTime: '0.8s',
     avgAgreement: '88%'
   });
+
+  // --- 🔄 INITIALIZATION & EFFECTS ---
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        router.push("/login");
+        return;
+    }
+    fetchUserData();
+    fetchChatHistory();
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const chatId = searchParams.get('chatId');
+    if (chatId && chatHistory.length > 0) {
+        const targetChat = chatHistory.find((c: any) => c._id === chatId);
+        if (targetChat) {
+            loadPreviousChat(targetChat);
+            router.replace('/');
+        }
+    }
+  }, [searchParams, chatHistory]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+        const now = new Date();
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const diff = tomorrow.getTime() - now.getTime();
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -114,6 +144,54 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // --- 🛠️ FUNCTIONS ---
+  const fetchUserData = async () => {
+    try {
+        const res = await fetch("/api/v1/user/me", {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        if (data.email) {
+            setUser(data);
+            setTokens(data.credits || 0);
+            setDailyCredits(data.dailyFreeCredits || 0);
+            setPlan(data.plan || "free");
+        } else {
+            router.push("/login");
+        }
+    } catch (err) {
+        console.error("Auth Error:", err);
+    }
+  };
+
+  const fetchChatHistory = async () => {
+    try {
+        const res = await fetch("/api/v1/user/history", {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) setChatHistory(data);
+    } catch (err) {
+        console.error("History Error:", err);
+    }
+  };
+
+  const loadPreviousChat = (chat: any) => {
+    const h: ChatHistory = { openai: [], deepseek: [], meta: [], gemini: [] };
+    if (chat.prompt) {
+      ["openai","deepseek","meta","gemini"].forEach(m => {
+        h[m as keyof ChatHistory] = [
+          { role: "user", content: chat.prompt },
+          { role: "assistant", content: chat.responses?.[m]?.text || "" }
+        ];
+      });
+    }
+    setHistory(h);
+    setAnalysis(chat.analysis || { consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis });
+    setHasStartedChat(true);
+    setSidebarOpen(false);
+  };
 
   const submitModelRequest = async () => {
     if (!modelReqName.trim() || !modelReqMsg.trim()) return;
@@ -183,32 +261,6 @@ export default function Home() {
     }
   };
 
-  const fetchChatHistory = async () => {
-    try {
-      const res = await fetch("/api/v1/user/history", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) setChatHistory(data);
-    } catch {}
-  };
-
-  const loadPreviousChat = (chat: any) => {
-    const h: ChatHistory = { openai: [], deepseek: [], meta: [], gemini: [] };
-    if (chat.prompt) {
-      ["openai","deepseek","meta","gemini"].forEach(m => {
-        h[m as keyof ChatHistory] = [
-          { role: "user", content: chat.prompt },
-          { role: "assistant", content: chat.responses?.[m]?.text || "" }
-        ];
-      });
-    }
-    setHistory(h);
-    setAnalysis({ consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis, agreementPercentage: chat.agreementPercentage, disagreement: chat.disagreement });
-    setHasStartedChat(true);
-    setSidebarOpen(false);
-  };
-
   const handleResolveDebate = async () => {
     if (!analysis) return;
     setResolvingDebate(true);
@@ -239,7 +291,6 @@ export default function Home() {
             body: JSON.stringify({ amount, planType: type })
         });
         const order = await res.json();
-
         const options = {
             key: "rzp_test_placeholder",
             amount: order.amount,
@@ -267,7 +318,6 @@ export default function Home() {
             prefill: { email: user?.email },
             theme: { color: "#3b82f6" }
         };
-
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
     } catch (err) {
@@ -315,9 +365,7 @@ export default function Home() {
     { title: "Strategic Planner", prompt: "Create a 5-year business strategy for: " }
   ];
 
-  const handleSolo = (id: string) => {
-    setSelectedModels([id]);
-  };
+  const handleSolo = (id: string) => { setSelectedModels([id]); };
 
   const toggleModel = (id: string) => {
     if (id === "all") {
@@ -338,9 +386,7 @@ export default function Home() {
   const handleChatSend = async (chatInput: string, forceModels?: string[], forceImageMode?: boolean, forceSearchMode?: boolean) => {
     let finalInput = chatInput;
     if (!finalInput.trim() && files.length === 0) return;
-
     let finalSelected = forceModels || [...selectedModels];
-    
     if (!forceModels && chatInput.includes("@")) {
       const match = chatInput.match(/@(openai|deepseek|meta|gemini)/i);
       if (match) {
@@ -348,34 +394,20 @@ export default function Home() {
         finalInput = chatInput.replace(match[0], "").trim();
       }
     }
-
     const currentImageMode = forceImageMode !== undefined ? forceImageMode : imageMode;
     const currentSearchMode = forceSearchMode !== undefined ? forceSearchMode : searchMode;
-
     const estimatedCost = finalSelected.length * 4;
     const totalPossibleCredits = tokens + dailyCredits;
     if (totalPossibleCredits < estimatedCost) {
         alert(`Insufficient credits! You need ${estimatedCost} tokens. You have ${totalPossibleCredits}.`);
         return;
     }
-
-    setInput("");
-    setHasStartedChat(true);
-    setLoading(true);
-    setLoadingModels(finalSelected);
-    setAnalysis(null);
-    
+    setInput(""); setHasStartedChat(true); setLoading(true); setLoadingModels(finalSelected); setAnalysis(null);
     const resultsAccumulator: Record<string, any> = {};
-    const modelsToRun = [...finalSelected];
-
-    const modelPromises = modelsToRun.map(async (model) => {
+    const modelPromises = finalSelected.map(async (model) => {
       try {
         const updatedHistory = { ...history };
-        updatedHistory[model as keyof ChatHistory] = [
-          ...history[model as keyof ChatHistory],
-          { role: "user", content: finalInput }
-        ];
-
+        updatedHistory[model as keyof ChatHistory] = [...history[model as keyof ChatHistory], { role: "user", content: finalInput }];
         const formData = new FormData();
         formData.append("chatHistory", JSON.stringify(updatedHistory));
         formData.append("bypassModels", JSON.stringify(["openai", "deepseek", "meta", "gemini"].filter(m => m !== model)));
@@ -383,62 +415,37 @@ export default function Home() {
         formData.append("searchMode", currentSearchMode.toString());
         formData.append("smartMode", smartMode);
         files.forEach(f => formData.append("files", f));
-
         const res = await fetch("/api/v1/chat", {
           method: "POST",
           headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
           body: formData,
         });
-
         const data = await res.json();
-        setLoading(false);
-        setSources(data.sources || []);
-        setUserVote(null); // Reset vote for new turn
-        
+        setLoading(false); setSources(data.sources || []); setUserVote(null);
         if (data.error) throw new Error(data.error);
-
         resultsAccumulator[model] = data[model];
-        
-        setHistory(prev => ({
-          ...prev,
-          [model]: [
-            ...prev[model as keyof ChatHistory],
-            { role: "user", content: finalInput },
-            { role: "assistant", content: data[model].text }
-          ]
-        }));
+        setHistory(prev => ({ ...prev, [model]: [...prev[model as keyof ChatHistory], { role: "user", content: finalInput }, { role: "assistant", content: data[model].text }] }));
         setMetrics(prev => ({ ...prev, [model]: data[model] }));
         if (data.remainingCredits !== undefined) setTokens(data.remainingCredits);
-        
         return { model, data: data[model] };
       } catch (err: any) {
         console.error(`Error loading ${model}:`, err);
         return { model, error: err.message };
-      } finally {
-        setLoadingModels(prev => prev.filter(m => m !== model));
-      }
+      } finally { setLoadingModels(prev => prev.filter(m => m !== model)); }
     });
-
     Promise.all(modelPromises).then(async (results) => {
-      setLoading(false);
-      setFiles([]);
-      
+      setLoading(false); setFiles([]);
       const validResults = results.filter(r => r.data && r.data.status === 'success');
       if (validResults.length > 0) {
         try {
           const analysisRes = await fetch("/api/v1/analyze", {
             method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}` 
-            },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
             body: JSON.stringify({ prompt: finalInput, results: resultsAccumulator }),
           });
           const analysisData = await analysisRes.json();
           if (analysisData.analysis) setAnalysis(analysisData.analysis);
-        } catch (anaErr) {
-          console.error("Analysis failed:", anaErr);
-        }
+        } catch (anaErr) { console.error("Analysis failed:", anaErr); }
       }
     });
   };
@@ -796,7 +803,7 @@ export default function Home() {
                                         {analysis.consensus || "Analyzing consensus..."}
                                     </p>
                                 </div>
-
+                                
                                 {analysis.bestModel && (
                                     <div className="mt-6 flex items-center justify-between">
                                          <div className="flex items-center gap-3">
@@ -1020,81 +1027,56 @@ export default function Home() {
                   </div>
               </div>
           )}
+      </main>
 
-      {/* Credit Top-Up Modal */}
+      {/* --- 📟 MODALS --- */}
       {showCreditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
-                <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"><X className="w-5 h-5" /></button>
-                <div className="p-10">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20"><Zap className="w-8 h-8 text-white" /></div>
-                        <div><h2 className="text-2xl font-black tracking-tight">Refuel Your AI âš¡</h2><p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
-                            <div><h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-2">Starter Pack</h3><div className="text-3xl font-black mb-4">Rs.99</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> One-time Topup</li></ul></div>
-                            <button onClick={() => handleBuyCredits(99, 'starter')} className="w-full py-3 bg-white dark:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest border border-black/5 dark:border-white/5 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">Get Credits</button>
-                        </div>
-                        <div className="p-6 rounded-3xl bg-blue-600/5 dark:bg-blue-600/10 border-2 border-blue-600/30 flex flex-col justify-between relative group">
-                            <div className="absolute top-4 right-4 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Best Value</div>
-                            <div><h3 className="font-black text-xs uppercase tracking-widest text-blue-500 mb-2">Pro Mastery</h3><div className="text-3xl font-black mb-4">Rs.199</div><ul className="space-y-2 mb-6"><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> 1500 Credits</li><li className="text-xs flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-medium"><Sparkles className="w-3 h-3 text-blue-500" /> Priority Support</li></ul></div>
-                            <button onClick={() => handleBuyCredits(199, 'pro')} className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Go Pro Now</button>
-                        </div>
-                    </div>
-                    <div className="mt-8 text-center"><p className="text-[10px] text-neutral-400 font-medium">Daily free credits reset in <span className="text-blue-500 font-bold">{timeLeft}</span></p></div>
-                </div>
-            </div>
-        </div>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-xl rounded-[40px] border border-black/5 dark:border-white/10 shadow-2xl overflow-hidden relative">
+                  <button onClick={() => setShowCreditModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
+                      <X className="w-5 h-5" />
+                  </button>
+                  <div className="p-10 text-center">
+                      <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
+                          <Zap className="w-8 h-8 text-white" />
+                      </div>
+                      <h2 className="text-2xl font-black tracking-tight mb-2">Refuel Neural Core</h2>
+                      <p className="text-neutral-500 text-sm mb-8">Purchase energy tokens to continue your synthesis.</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <button onClick={() => handleBuyCredits(99, 'starter')} className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-blue-500/50 transition-all group">
+                              <span className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Starter</span>
+                              <span className="text-2xl font-black">₹99</span>
+                              <span className="text-[10px] block text-blue-500 font-bold mt-2">500 Credits</span>
+                          </button>
+                          <button onClick={() => handleBuyCredits(199, 'pro')} className="p-6 rounded-3xl bg-blue-600/10 border-2 border-blue-600/30 hover:border-blue-600 transition-all">
+                              <span className="text-[10px] font-black uppercase text-blue-600 block mb-1">Pro Master</span>
+                              <span className="text-2xl font-black">₹199</span>
+                              <span className="text-[10px] block text-blue-600 font-bold mt-2">1500 Credits</span>
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
       )}
 
-      {/* Model Request Modal */}
       {showModelRequestModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-md rounded-[32px] border border-black/5 dark:border-white/10 shadow-2xl relative overflow-hidden">
-            <button onClick={() => { setShowModelRequestModal(false); setModelReqStatus(''); }} className="absolute top-5 right-5 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors"><X className="w-4 h-4" /></button>
-            <div className="p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-violet-600 rounded-2xl flex items-center justify-center"><Cpu className="w-5 h-5 text-white" /></div>
-                <div>
-                  <h2 className="text-lg font-black tracking-tight">Request a Model</h2>
-                  <p className="text-neutral-500 text-xs">Tell us which AI model you want added</p>
-                </div>
-              </div>
-              {modelReqStatus === 'success' ? (
-                <div className="text-center py-6">
-                  <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3"><MessageCircle className="w-7 h-7 text-emerald-500" /></div>
-                  <p className="font-black text-sm uppercase tracking-widest text-emerald-500">Request Sent!</p>
-                  <p className="text-xs text-neutral-500 mt-1">We will review and add it soon.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1.5">Model Name *</label>
-                    <input value={modelReqName} onChange={e => setModelReqName(e.target.value)} placeholder="e.g. Claude 3.5 Sonnet, Grok 2, Mistral..."
-                      className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-violet-500/40 transition-all" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-1.5">Why do you want it? *</label>
-                    <textarea value={modelReqMsg} onChange={e => setModelReqMsg(e.target.value)} rows={3} placeholder="How would this model help you?"
-                      className="w-full bg-neutral-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-violet-500/40 transition-all resize-none" />
-                  </div>
-                  {modelReqStatus === 'error' && <p className="text-xs text-red-500">Failed to submit. Please try again.</p>}
-                  <button onClick={submitModelRequest} disabled={modelReqLoading || !modelReqName.trim() || !modelReqMsg.trim()}
-                    className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40">
-                    {modelReqLoading ? 'Submitting...' : 'Submit Request'}
-                  </button>
-                </div>
-              )}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#0c0c0e] w-full max-w-md rounded-[32px] border border-black/10 dark:border-white/10 shadow-2xl p-8 relative">
+            <button onClick={() => setShowModelRequestModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-white/5"><X className="w-5 h-5" /></button>
+            <h3 className="text-lg font-black uppercase tracking-widest mb-2">Request Model</h3>
+            <p className="text-xs text-neutral-500 mb-6">Tell us which AI model you want to see in AIFusion.</p>
+            <div className="space-y-4">
+              <input value={modelReqName} onChange={e => setModelReqName(e.target.value)} placeholder="Model Name (e.g. Grok 2, Claude 3.5)" className="w-full bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500" />
+              <textarea value={modelReqMsg} onChange={e => setModelReqMsg(e.target.value)} rows={4} placeholder="Why do you need this model?" className="w-full bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-blue-500 resize-none" />
+              {modelReqStatus && <p className={`text-[10px] font-black uppercase text-center ${modelReqStatus === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>{modelReqStatus === 'success' ? 'Request submitted!' : 'Submission failed.'}</p>}
+              <button onClick={submitModelRequest} disabled={modelReqLoading || !modelReqName.trim()} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50">
+                {modelReqLoading ? 'Submitting...' : 'Send Request'}
+              </button>
             </div>
           </div>
         </div>
       )}
-          </>
-        )}
-      </main>
-    </div>
     </div>
   );
 }
-

@@ -15,8 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIFusion - Multimodal Chat",
-  description: "Next-gen AI Aggregator",
+  title: "AIFusion - Neural Core Intelligence",
+  description: "Universal AI Productivity Platform",
+  manifest: "/manifest.json",
+  themeColor: "#2563eb",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AIFusion",
+  },
 };
 
 export default function RootLayout({

@@ -64,6 +64,7 @@ function NeuralCore() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sources, setSources] = useState<{ title: string; url: string; snippet: string }[]>([]);
   const [userVote, setUserVote] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
 
   const [showModelRequestModal, setShowModelRequestModal] = useState(false);
   const [modelReqName, setModelReqName] = useState('');
@@ -189,8 +190,18 @@ function NeuralCore() {
     }
     setHistory(h);
     setAnalysis(chat.analysis || { consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis });
+    setChatId(chat._id || chat.id);
     setHasStartedChat(true);
+    setCurrentTool('chat');
     setSidebarOpen(false);
+  };
+
+  const startNewChat = () => {
+    setHistory({ openai: [], deepseek: [], meta: [], gemini: [] });
+    setChatId(null);
+    setAnalysis(null);
+    setHasStartedChat(false);
+    setCurrentTool('chat');
   };
 
   const submitModelRequest = async () => {
@@ -427,6 +438,19 @@ function NeuralCore() {
         setHistory(prev => ({ ...prev, [model]: [...prev[model as keyof ChatHistory], { role: "user", content: finalInput }, { role: "assistant", content: data[model].text }] }));
         setMetrics(prev => ({ ...prev, [model]: data[model] }));
         if (data.remainingCredits !== undefined) setTokens(data.remainingCredits);
+        if (data.chatId) setChatId(data.chatId);
+        
+        // --- 🧠 AUTO-TITLE GENERATION ---
+        if (!chatId && data.chatId && history[model as keyof ChatHistory].length === 0) {
+            try {
+                fetch("/api/v1/chat/title", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                    body: JSON.stringify({ prompt: finalInput, chatId: data.chatId })
+                }).then(() => fetchChatHistory());
+            } catch (err) { console.error("Auto-title failed", err); }
+        }
+        
         return { model, data: data[model] };
       } catch (err: any) {
         console.error(`Error loading ${model}:`, err);

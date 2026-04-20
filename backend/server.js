@@ -37,12 +37,13 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'https://fusion-ai-ten.vercel.app',
-    process.env.FRONTEND_URL
+    'https://fusion-ai-sigma.vercel.app'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // Allow if no origin (like mobile apps/curl) or if matches whitelist or if from Vercel
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('vercel.app')) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));

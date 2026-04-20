@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const chatSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     prompt: { type: String, required: true },
+    title: { type: String, default: 'New Conversation' },
+    isPinned: { type: Boolean, default: false },
     responses: {
         openai: { text: String, metadata: Object },
         deepseek: { text: String, metadata: Object },

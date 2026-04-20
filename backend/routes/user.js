@@ -14,6 +14,9 @@ router.get('/me', authMiddleware, async (req, res) => {
         dailyFreeCredits: req.user.dailyFreeCredits,
         plan: req.user.plan,
         authProvider: req.user.authProvider,
+        streak: req.user.streak || 0,
+        totalQueries: req.user.totalQueries || 0,
+        lastActiveDate: req.user.lastActiveDate,
         createdAt: req.user.createdAt
     });
 });

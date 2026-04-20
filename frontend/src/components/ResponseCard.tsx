@@ -11,11 +11,12 @@ interface ResponseCardProps {
   onFocus: () => void;
   onEditMessage?: (index: number, newContent: string) => void;
   isBest?: boolean;
-  metrics?: { time: number; tokens: number; status: string };
+  metrics?: { time: number; tokens: number; status: string; score?: { accuracy: number; clarity: number } };
   onSolo?: () => void;
+  cost?: number;
 }
 
-export default function ResponseCard({ modelName, provider, messages, loading, onFocus, onEditMessage, isBest, metrics, onSolo }: ResponseCardProps) {
+export default function ResponseCard({ modelName, provider, messages, loading, onFocus, onEditMessage, isBest, metrics, onSolo, cost }: ResponseCardProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editBuffer, setEditBuffer] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -98,9 +99,9 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
       {/* Premium Header */}
       <div className="relative z-10 px-6 py-5 flex items-center justify-between border-b border-neutral-100 dark:border-white/5 bg-white/80 dark:bg-black/50 backdrop-blur-md">
         {isBest && (
-          <div className="absolute top-2 right-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl z-20 flex items-center gap-1.5 border border-white/20 animate-in zoom-in-50 duration-500">
+          <div className="absolute top-2 right-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl z-20 flex items-center gap-1.5 border border-white/20 animate-in zoom-in-50 duration-500 shadow-amber-500/20">
             <Sparkles className="w-3 h-3" />
-            Best Answer
+            🏆 Best Answer
           </div>
         )}
 
@@ -109,32 +110,35 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
             {getProviderIcon()}
           </div>
           <div>
-            <h2 className="font-bold text-[15px] text-neutral-800 dark:text-neutral-100 tracking-tight leading-none mb-1">{modelName}</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="font-bold text-[15px] text-neutral-800 dark:text-neutral-100 tracking-tight leading-none">{modelName}</h2>
+              {metrics?.score && (
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded-md text-[10px] font-black">
+                  ⭐ {((metrics.score.accuracy + metrics.score.clarity) / 2).toFixed(1)}/10
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 opacity-60">Comparative Engine</span>
+              <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-neutral-400">
+                <Clock className="w-2.5 h-2.5" />
+                <span>{metrics ? `${(metrics.time / 1000).toFixed(1)}s` : '---'}</span>
+                <span className="w-1 h-1 rounded-full bg-neutral-300" />
+                <Coins className="w-2.5 h-2.5 text-amber-500/60" />
+                <span>{cost || 0} credits</span>
+              </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); onSolo?.(); }}
                 className="px-2 py-0.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-md text-[9px] font-black uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                Solo Mode
+                Solo
               </button>
-              {metrics && (
-                <div className="flex items-center gap-2 text-[9px] font-mono font-bold text-neutral-400">
-                  <span className="w-1 h-1 rounded-full bg-neutral-300" />
-                  <span>{metrics.time}ms</span>
-                  <span className="w-1 h-1 rounded-full bg-neutral-300" />
-                  <span>{metrics.tokens} tokens</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
         {loading && (
-          <div className="flex items-center gap-1">
-             <div className="flex gap-1 px-3 py-1.5 bg-neutral-100 dark:bg-white/5 rounded-full border border-neutral-200/50 dark:border-white/5">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="flex items-center gap-2">
+             <div className="px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-full border border-blue-500/20 text-[9px] font-black uppercase tracking-widest animate-pulse">
+                Thinking...
              </div>
           </div>
         )}
@@ -290,6 +294,21 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                   </ReactMarkdown>
                 </div>
               </div>
+            )}
+
+            {loading && idx === messages.length - 1 && msg.role === 'user' && (
+                <div className="self-start max-w-full w-full bg-white dark:bg-[#121212] p-8 rounded-[28px] rounded-tl-[4px] shadow-sm border border-neutral-100 dark:border-white/5 space-y-4 animate-in fade-in duration-500">
+                    <div className="flex items-center gap-2 opacity-20 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-white/10 animate-pulse" />
+                        <div className="w-24 h-3 bg-neutral-200 dark:bg-white/10 rounded-full animate-pulse" />
+                    </div>
+                    <div className="space-y-3">
+                        <div className="h-4 bg-neutral-100 dark:bg-white/5 rounded-full w-full animate-pulse" />
+                        <div className="h-4 bg-neutral-100 dark:bg-white/5 rounded-full w-[90%] animate-pulse" />
+                        <div className="h-4 bg-neutral-100 dark:bg-white/5 rounded-full w-[95%] animate-pulse" />
+                        <div className="h-4 bg-neutral-100 dark:bg-white/5 rounded-full w-[40%] animate-pulse" />
+                    </div>
+                </div>
             )}
             
           </div>

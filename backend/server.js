@@ -14,6 +14,14 @@ const { callGemini } = require('./services/gemini');
 const { analyzeResponses, improvePrompt } = require('./services/analyzer');
 const { generateImagePollinations } = require('./services/pollinations');
 
+const { evaluateResponses } = require('./services/evaluatorService');
+const { generateSummary } = require('./services/summaryService');
+const { detectAgreement } = require('./services/agreementService');
+const { getSmartRouting } = require('./services/smartRoutingService');
+const { generateTitle } = require('./services/memoryService');
+const { updateStreak } = require('./services/streakService');
+const { resolveDisagreement } = require('./services/debateService');
+
 const authMiddleware = require('./middleware/authMiddleware');
 const billingMiddleware = require('./middleware/billingMiddleware');
 const User = require('./models/User');
@@ -88,7 +96,7 @@ const MODEL_PRICING = {
 
 app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (req, res) => {
     try {
-        let { chatHistory, bypassModels } = req.body;
+        let { chatHistory, bypassModels, smartMode } = req.body;
         
         // Multer puts fields in req.body, but sometimes JSON parsing is needed if sent as string
         let historyObj;    
@@ -110,6 +118,15 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
 
         const isImageMode = req.body.imageMode === true || req.body.imageMode === 'true';
         const isSearchMode = req.body.searchMode === true || req.body.searchMode === 'true';
+
+        // --- ⚡ SMART ROUTING ---
+        let smartConfig = null;
+        if (smartMode && !isImageMode) {
+            smartConfig = getSmartRouting(smartMode);
+            // If smart mode is active, it might override bypass models
+            // but we'll respect user selection if they manually deselected something
+            // For now, let's just use it as a recommendation or force if specified
+        }
 
         const activeModels = ['openai', 'deepseek', 'meta', 'gemini'].filter(m => !bypass.includes(m));
         let totalCost = activeModels.reduce((sum, model) => sum + (MODEL_COSTS[model] || 0), 0);
@@ -235,7 +252,20 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 return await generateImageDALLE(prompt);
             }
 
-            return await apiCallFunc(msgs);
+            // --- ⚡ TIMEOUT SYSTEM (10s) ---
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+            );
+
+            try {
+                return await Promise.race([apiCallFunc(msgs), timeoutPromise]);
+            } catch (err) {
+                if (err.message === 'TIMEOUT') {
+                    console.error(`Model ${modelName} timed out after 10s`);
+                    return { text: "Response timed out after 10s.", time: 10000, status: "error", error: "TIMEOUT" };
+                }
+                throw err;
+            }
         };
 
         const [openaiRes, deepseekRes, metaRes, geminiRes] = await Promise.all([
@@ -285,23 +315,54 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         }
 
         const validResponses = Object.entries(results).filter(([k, v]) => !v.skipped && v.status === "success");
+        
+        // If only one model was requested (for independent loading), return immediately without analysis
+        if (activeModels.length === 1) {
+            return res.json({
+                ...results,
+                analysis: null,
+                remainingCredits: user.credits
+            });
+        }
+
         let analysis = null;
-        if (validResponses.length > 1) {
+        if (validResponses.length > 0) {
             try {
                 const prompt = historyObj.openai?.[historyObj.openai.length - 1]?.content || "";
                 const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
-                analysis = await analyzeResponses(promptText, results);
+                
+                // --- 🧠 NEW AI FUSION SYSTEM ---
+                const [evalData, summary, agreement] = await Promise.all([
+                    evaluateResponses(promptText, results),
+                    generateSummary(promptText, results),
+                    detectAgreement(promptText, results)
+                ]);
+
+                analysis = {
+                    ...evalData,
+                    ultimateSynthesis: summary,
+                    agreementPercentage: agreement?.agreementPercentage || 0,
+                    disagreement: agreement?.disagreement || false,
+                    consensus: agreement?.consensusSummary || ""
+                };
             } catch (anaErr) { console.error("Analysis Error:", anaErr); }
         }
+
+        // --- 📊 UPDATE STREAK & STATS ---
+        await updateStreak(user);
 
         // --- 💾 SAVE CHAT HISTORY ---
         try {
             const prompt = historyObj.openai?.[historyObj.openai.length - 1]?.content || "";
             const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
             
+            // Generate title only if it's the first message or if it's a new session
+            const title = await generateTitle(promptText);
+
             await Chat.create({
                 userId: user._id,
                 prompt: promptText,
+                title: title,
                 responses: {
                     openai: results.openai?.status === "success" ? { text: results.openai.text } : null,
                     deepseek: results.deepseek?.status === "success" ? { text: results.deepseek.text } : null,
@@ -321,12 +382,51 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         return res.json({
             ...results,
             analysis,
-            remainingCredits: req.user.credits
+            remainingCredits: user.credits
         });
 
     } catch (error) {
         console.error('Chat Error:', error);
         return res.status(500).json({ error: 'Backend Server Error' });
+    }
+});
+
+app.post('/api/analyze', authMiddleware, async (req, res) => {
+    try {
+        const { prompt, results } = req.body;
+        if (!prompt || !results) return res.status(400).json({ error: 'Missing prompt or results' });
+
+        const [evalData, summary, agreement] = await Promise.all([
+            evaluateResponses(prompt, results),
+            generateSummary(prompt, results),
+            detectAgreement(prompt, results)
+        ]);
+
+        const analysis = {
+            ...evalData,
+            ultimateSynthesis: summary,
+            agreementPercentage: agreement?.agreementPercentage || 0,
+            disagreement: agreement?.disagreement || false,
+            consensus: agreement?.consensusSummary || ""
+        };
+
+        return res.json({ analysis });
+    } catch (error) {
+        console.error('Analyze Error:', error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/resolve-debate', authMiddleware, async (req, res) => {
+    try {
+        const { prompt, results } = req.body;
+        if (!prompt || !results) return res.status(400).json({ error: 'Missing prompt or results' });
+
+        const resolution = await resolveDisagreement(prompt, results);
+        return res.json({ resolution });
+    } catch (error) {
+        console.error('Resolve Debate Error:', error);
+        return res.status(500).json({ error: error.message });
     }
 });
 

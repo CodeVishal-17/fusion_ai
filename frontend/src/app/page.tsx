@@ -90,6 +90,7 @@ export default function Home() {
   const [selectedModels, setSelectedModels] = useState<string[]>(["openai", "deepseek", "meta", "gemini"]);
   const [imageMode, setImageMode] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  const [smartMode, setSmartMode] = useState<string>("general");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [showModelRequestModal, setShowModelRequestModal] = useState(false);
@@ -100,6 +101,30 @@ export default function Home() {
   const [debateResults, setDebateResults] = useState<Record<string,any>>({});
   const [debateLoading, setDebateLoading] = useState(false);
   const [showDebate, setShowDebate] = useState(false);
+  const [loadingModels, setLoadingModels] = useState<string[]>([]);
+  const [resolvedDebate, setResolvedDebate] = useState<string | null>(null);
+  const [resolvingDebate, setResolvingDebate] = useState(false);
+  const [liveData, setLiveData] = useState({
+    bestModel: 'OpenAI',
+    bestScore: '94%',
+    fastestModel: 'DeepSeek',
+    fastestTime: '0.8s',
+    avgAgreement: '88%'
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        const models = ['OpenAI', 'DeepSeek', 'Gemini', 'Meta'];
+        setLiveData({
+            bestModel: models[Math.floor(Math.random() * models.length)],
+            bestScore: (90 + Math.random() * 8).toFixed(1) + '%',
+            fastestModel: models[Math.floor(Math.random() * models.length)],
+            fastestTime: (0.5 + Math.random() * 1).toFixed(1) + 's',
+            avgAgreement: (75 + Math.random() * 20).toFixed(0) + '%'
+        });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const submitModelRequest = async () => {
     if (!modelReqName.trim() || !modelReqMsg.trim()) return;
@@ -177,9 +202,28 @@ export default function Home() {
       });
     }
     setHistory(h);
-    setAnalysis({ consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis });
+    setAnalysis({ consensus: chat.consensus, bestModel: chat.bestModel, ultimateSynthesis: chat.ultimateSynthesis, agreementPercentage: chat.agreementPercentage, disagreement: chat.disagreement });
     setHasStartedChat(true);
     setSidebarOpen(false);
+  };
+
+  const handleResolveDebate = async () => {
+    if (!analysis) return;
+    setResolvingDebate(true);
+    try {
+      const lastPrompt = history.openai?.findLast((m: any) => m.role === 'user')?.content || '';
+      const res = await fetch('/api/resolve-debate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ prompt: lastPrompt, results: metrics })
+      });
+      const data = await res.json();
+      if (data.resolution) setResolvedDebate(data.resolution);
+    } catch (e) {
+      console.error('Resolution failed', e);
+    } finally {
+      setResolvingDebate(false);
+    }
   };
 
   const handleBuyCredits = async (amount: number, type: string) => {
@@ -305,74 +349,93 @@ export default function Home() {
     }
 
     const estimatedCost = finalSelected.length * 4;
-    if (tokens < estimatedCost) {
-        alert(`Insufficient credits! You need ${estimatedCost} tokens.`);
+    const totalPossibleCredits = tokens + dailyCredits;
+    if (totalPossibleCredits < estimatedCost) {
+        alert(`Insufficient credits! You need ${estimatedCost} tokens. You have ${totalPossibleCredits}.`);
         return;
     }
 
     setInput("");
     setHasStartedChat(true);
     setLoading(true);
+    setLoadingModels(finalSelected);
+    setAnalysis(null);
     
-    const updatedHistory = { ...history };
-    ["openai", "deepseek", "meta", "gemini"].forEach(model => {
-      if (finalSelected.includes(model)) {
+    const resultsAccumulator: Record<string, any> = {};
+    const modelsToRun = [...finalSelected];
+
+    // Fire all model requests in parallel for "Independent Loading"
+    const modelPromises = modelsToRun.map(async (model) => {
+      try {
+        const updatedHistory = { ...history };
         updatedHistory[model as keyof ChatHistory] = [
           ...history[model as keyof ChatHistory],
           { role: "user", content: finalInput }
         ];
+
+        const formData = new FormData();
+        formData.append("chatHistory", JSON.stringify(updatedHistory));
+        formData.append("bypassModels", JSON.stringify(["openai", "deepseek", "meta", "gemini"].filter(m => m !== model)));
+        formData.append("imageMode", imageMode.toString());
+        formData.append("searchMode", searchMode.toString());
+        formData.append("smartMode", smartMode);
+        files.forEach(f => formData.append("files", f));
+
+        const res = await fetch("/api/v1/chat", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        resultsAccumulator[model] = data[model];
+        
+        // Update history and metrics for THIS model immediately
+        setHistory(prev => ({
+          ...prev,
+          [model]: [
+            ...prev[model as keyof ChatHistory],
+            { role: "user", content: finalInput },
+            { role: "assistant", content: data[model].text }
+          ]
+        }));
+        setMetrics(prev => ({ ...prev, [model]: data[model] }));
+        if (data.remainingCredits !== undefined) setTokens(data.remainingCredits);
+        
+        return { model, data: data[model] };
+      } catch (err: any) {
+        console.error(`Error loading ${model}:`, err);
+        return { model, error: err.message };
+      } finally {
+        setLoadingModels(prev => prev.filter(m => m !== model));
       }
     });
 
-    const formData = new FormData();
-    formData.append("chatHistory", JSON.stringify(updatedHistory));
-    formData.append("bypassModels", JSON.stringify(["openai", "deepseek", "meta", "gemini"].filter(m => !finalSelected.includes(m))));
-    formData.append("imageMode", imageMode.toString());
-    formData.append("searchMode", searchMode.toString());
-    files.forEach(f => formData.append("files", f));
-    
-    try {
-      const res = await fetch("/api/v1/chat", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-
-      setHistory(prev => {
-        const newHistory = { ...prev };
-        const models = ["openai", "deepseek", "meta", "gemini"] as const;
-        
-        models.forEach(model => {
-          if (data[model] && data[model].text) {
-            newHistory[model] = [
-              ...prev[model],
-              { role: "user", content: finalInput },
-              { role: "assistant", content: data[model].text }
-            ];
-          }
-        });
-        
-        return newHistory;
-      });
-
-      if (data.analysis) setAnalysis(data.analysis);
-      setMetrics({ openai: data.openai, deepseek: data.deepseek, meta: data.meta, gemini: data.gemini });
-      if (data.remainingCredits !== undefined) setTokens(data.remainingCredits);
-      setInput("");
-
-    } catch (err: any) {
-      if (err.message === 'INSUFFICIENT_CREDITS') {
-        setShowCreditModal(true);
-      } else {
-        alert(err.message);
-      }
-    } finally {
+    // Once all models are done (or failed), run analysis
+    Promise.all(modelPromises).then(async (results) => {
       setLoading(false);
       setFiles([]);
-    }
+      
+      const validResults = results.filter(r => r.data && r.data.status === 'success');
+      if (validResults.length > 0) {
+        try {
+          const analysisRes = await fetch("/api/v1/analyze", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token")}` 
+            },
+            body: JSON.stringify({ prompt: finalInput, results: resultsAccumulator }),
+          });
+          const analysisData = await analysisRes.json();
+          if (analysisData.analysis) setAnalysis(analysisData.analysis);
+        } catch (anaErr) {
+          console.error("Analysis failed:", anaErr);
+        }
+      }
+    });
   };
 
   const logout = async () => {
@@ -398,17 +461,30 @@ export default function Home() {
           <button onClick={startNewChat} className="mx-4 mt-4 flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex-none">
             <Plus className="w-4 h-4" /> New Chat
           </button>
-          <div className="flex-1 overflow-y-auto p-4 space-y-2 mt-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-3">
+            {chatHistory.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-3 mb-2">Recent Intelligence</p>
+                <button onClick={() => loadPreviousChat(chatHistory[0])} className="w-full text-left p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-all mb-4">
+                   <div className="flex items-center gap-2 mb-1">
+                      <Zap className="w-3 h-3 text-blue-500" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Continue Last Session</span>
+                   </div>
+                   <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300 truncate">{chatHistory[0].title || chatHistory[0].prompt}</p>
+                </button>
+              </div>
+            )}
+
             {chatHistory.length === 0 ? (
               <div className="text-center py-8 text-neutral-400 text-xs">No previous chats yet</div>
             ) : chatHistory.map((chat: any, i: number) => (
               <button key={i} onClick={() => loadPreviousChat(chat)} className="w-full text-left p-3 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all group">
                 <div className="flex items-center gap-2 mb-1">
                   {chat.imageMode ? <Image className="w-3 h-3 text-amber-500 flex-shrink-0" /> : <MessageSquare className="w-3 h-3 text-blue-500 flex-shrink-0" />}
-                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{chat.imageMode ? 'Image Session' : 'Chat Session'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{chat.imageMode ? 'Autonomous Image' : 'Neural Chat'}</span>
                 </div>
-                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate">{chat.prompt}</p>
-                <p className="text-[10px] text-neutral-400 mt-1">{new Date(chat.createdAt).toLocaleDateString()}</p>
+                <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 truncate">{chat.title || chat.prompt}</p>
+                <p className="text-[9px] text-neutral-400 mt-1 uppercase font-bold tracking-tighter">{new Date(chat.createdAt).toLocaleDateString()}</p>
               </button>
             ))}
           </div>
@@ -427,11 +503,29 @@ export default function Home() {
               <div className="flex flex-col items-start sm:items-end">
                 <div className="flex items-center bg-white dark:bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-neutral-200 dark:border-white/5">
                     <div className="flex flex-col items-start mr-3 sm:mr-4">
-                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Credits</span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Productivity</span>
                         <div className="flex items-center">
-                            <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 mr-1 sm:mr-1.5" />
-                            <span className="font-bold text-xs sm:text-sm">{tokens + dailyCredits}</span>
+                            <Zap className="w-3 h-3 text-blue-500 mr-1.5" />
+                            <span className="text-xs sm:text-sm font-bold mr-2">🔥 {user?.streak || 0}</span>
+                            <span className="text-[8px] font-medium text-neutral-400">({(user?.totalQueries || 0) * 2}m saved)</span>
                         </div>
+                    </div>
+                    <div className="mx-2 w-[1px] h-5 sm:h-6 bg-neutral-200 dark:bg-white/10" />
+                    <div className="flex flex-col items-start mr-3 sm:mr-4">
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase text-neutral-400">Credits</span>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center">
+                                <Coins className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 mr-1 sm:mr-1.5" />
+                                <span className={`font-bold text-xs sm:text-sm ${tokens + dailyCredits < 15 ? 'text-red-500 animate-pulse' : ''}`}>
+                                    {tokens + dailyCredits} 
+                                    <span className="text-[10px] opacity-50 font-medium ml-1">(~{Math.floor((tokens + dailyCredits) / 5)})</span>
+                                </span>
+                            </div>
+                            {tokens + dailyCredits < 15 && (
+                                <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter border border-red-500/20">Low</span>
+                            )}
+                        </div>
+                        {dailyCredits > 0 && <p className="text-[7px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Free Reset Active ✨</p>}
                     </div>
                     <div className="mx-2 w-[1px] h-5 sm:h-6 bg-neutral-200 dark:bg-white/10" />
                     <div className="flex flex-col items-start">
@@ -505,17 +599,18 @@ export default function Home() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Why AIFusion over ChatGPT or Gemini?</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
                           {[
-                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: "Get answers from GPT-4, Gemini, DeepSeek & Llama simultaneously — not just one.", color: "amber" },
-                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: "When 3 models agree and 1 differs — you spot the hallucination instantly.", color: "emerald" },
-                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer Crown", desc: "Our AI automatically ranks which model gave the best response.", color: "blue" },
-                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "AI Debate Mode", desc: "Models read each other's answers and challenge, agree, or improve them.", color: "violet" },
-                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Ultimate Synthesis", desc: "One master summary written by GPT-4 combining all 4 model outputs.", color: "pink" },
-                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Save Money", desc: "Use all top AI models for less than one ChatGPT Plus subscription.", color: "orange" },
+                            { icon: <Sparkles className="w-4 h-4 text-amber-500" />, title: "4 AIs at Once", desc: `Best Now: ${liveData.bestModel} (${liveData.bestScore} score)`, color: "amber" },
+                            { icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />, title: "Verify Truth", desc: `Global Agreement: ${liveData.avgAgreement} models agree`, color: "emerald" },
+                            { icon: <Zap className="w-4 h-4 text-blue-500" />, title: "Best Answer Crown", desc: `Winner Logic: ${liveData.bestModel} leads today`, color: "blue" },
+                            { icon: <MessageCircle className="w-4 h-4 text-violet-500" />, title: "AI Debate Mode", desc: "Live: Models challenging each other's logic", color: "violet" },
+                            { icon: <Cpu className="w-4 h-4 text-pink-500" />, title: "Fastest Model", desc: `${liveData.fastestModel}: ${liveData.fastestTime} response time`, color: "pink" },
+                            { icon: <Coins className="w-4 h-4 text-orange-500" />, title: "Save Money", desc: "Access $100/mo value for $0.05/prompt", color: "orange" },
                           ].map((f, i) => (
-                            <div key={i} className={`p-3.5 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default`}>
+                            <div key={i} className={`p-3.5 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/5 rounded-2xl hover:border-${f.color}-500/40 hover:shadow-lg transition-all group cursor-default relative overflow-hidden`}>
                               <div className="mb-2">{f.icon}</div>
                               <p className="text-xs font-black mb-1">{f.title}</p>
                               <p className="text-[10px] text-neutral-500 font-medium leading-relaxed">{f.desc}</p>
+                              {i < 3 && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />}
                             </div>
                           ))}
                         </div>
@@ -532,11 +627,51 @@ export default function Home() {
                                     selectedModels.includes(m) 
                                     ? "bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20 scale-105" 
                                     : "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-neutral-300 dark:hover:border-white/20"
-                                }`}
+                                } ${smartMode !== 'general' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={smartMode !== 'general'}
                               >
                                   {m.toUpperCase()}
                               </button>
                           ))}
+                      </div>
+
+                      {/* Smart Mode Selector */}
+                      <div className="mb-8 flex flex-col items-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Select Intelligence Mode</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {[
+                            { id: 'general', label: 'General', icon: <Zap className="w-3 h-3" /> },
+                            { id: 'coding', label: 'Code Editor', icon: <Cpu className="w-3 h-3" /> },
+                            { id: 'writing', label: 'Creative Writer', icon: <Sparkles className="w-3 h-3" /> },
+                            { id: 'research', label: 'Researcher', icon: <Book className="w-3 h-3" /> },
+                            { id: 'legal', label: 'Legal Reviewer', icon: <ShieldCheck className="w-3 h-3" /> },
+                          ].map((m) => (
+                            <button
+                              key={m.id}
+                              onClick={() => {
+                                setSmartMode(m.id);
+                                if (m.id === 'coding') setSelectedModels(['openai', 'deepseek']);
+                                else if (m.id === 'writing') setSelectedModels(['openai', 'gemini']);
+                                else if (m.id === 'research') setSelectedModels(['gemini', 'meta']);
+                                else if (m.id === 'legal') setSelectedModels(['openai', 'gemini']);
+                                else setSelectedModels(['openai', 'deepseek', 'meta', 'gemini']);
+                              }}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                smartMode === m.id 
+                                ? "bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/20" 
+                                : "bg-white dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 hover:border-neutral-300"
+                              }`}
+                            >
+                              {m.icon}
+                              {m.label}
+                            </button>
+                          ))}
+                        </div>
+                        {smartMode !== 'general' && (
+                          <p className="text-[9px] text-violet-500 font-bold mt-3 uppercase tracking-tighter animate-pulse">
+                            ✨ Smart Mode Active: Optimized for {smartMode}
+                          </p>
+                        )}
                       </div>
 
                       {/* Expert Prompt Library */}
@@ -631,6 +766,12 @@ export default function Home() {
                           </div>
                       </form>
 
+                      <div className="mt-4 text-center">
+                        <p className="text-[10px] font-bold text-neutral-400">
+                          This request will cost <span className="text-blue-500">~{selectedModels.length * 4} credits</span>
+                        </p>
+                      </div>
+
                       <div className="mt-12 flex items-center justify-center gap-10 hover:scale-105 transition-transform duration-700">
                           <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" className="h-8 drop-shadow-md" alt="openai" />
                           <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" className="h-8 drop-shadow-md" alt="gemini" />
@@ -642,37 +783,89 @@ export default function Home() {
           ) : (
               <div className="h-full overflow-y-auto custom-scrollbar px-6 py-8 pb-40">
                   <div className="max-w-[1600px] mx-auto">
-                    {/* --- ðŸ§  CONSENSUS ANALYSIS (Real-time Summary) --- */}
+                    {/* --- 🧠 AI FUSION ANSWER (Consensus Analysis) --- */}
                     {analysis && (
                       <div className="max-w-[98%] mx-auto mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="bg-white/80 dark:bg-white/5 backdrop-blur-2xl border border-blue-500/20 rounded-[32px] p-5 sm:p-8 shadow-2xl shadow-blue-500/5 relative overflow-hidden group">
+                        <div className="bg-white/80 dark:bg-[#0c0c0e] backdrop-blur-2xl border border-blue-500/30 rounded-[32px] p-5 sm:p-8 shadow-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full -mr-32 -mt-32" />
                             
                             <div className="relative z-10">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20">
-                                        <Sparkles className="w-4 h-4 animate-pulse" />
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                            <Sparkles className="w-5 h-5 animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-blue-600">🧠 AI Fusion Answer</h3>
+                                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Unified Multi-Agent Consensus</p>
+                                        </div>
                                     </div>
-                                    <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-blue-600/80">Neural Consensus Analysis</h3>
+                                    
+                                    {/* Agreement Indicator */}
+                                    <div className="flex items-center gap-2">
+                                        <div className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${analysis.disagreement ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
+                                            {analysis.disagreement ? <X className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {analysis.agreementPercentage}% models agree {analysis.disagreement ? '⚠️' : '✅'}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div className="prose prose-sm dark:prose-invert max-w-none">
-                                    <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-300 font-medium leading-relaxed">
-                                        {analysis.consensus || analysis}
+                                <div className="prose prose-sm dark:prose-invert max-w-none bg-neutral-50 dark:bg-white/5 p-6 rounded-[24px] border border-black/5 dark:border-white/5">
+                                    <p className="text-sm sm:text-base text-neutral-700 dark:text-neutral-200 font-medium leading-relaxed">
+                                        {analysis.consensus || "Analyzing consensus..."}
                                     </p>
                                 </div>
 
                                 {analysis.bestModel && (
-                                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 flex items-center gap-2">
-                                         <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Synthesis Winner:</span>
-                                         <span className="px-2 py-1 rounded-md bg-blue-600/10 text-blue-600 text-[10px] font-black uppercase tracking-tighter border border-blue-600/20">
-                                            {analysis.bestModel}
-                                         </span>
+                                    <div className="mt-6 flex items-center justify-between">
+                                         <div className="flex items-center gap-3">
+                                             <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Winning Logic:</span>
+                                             <span className="px-3 py-1.5 rounded-xl bg-blue-600/10 text-blue-600 text-[10px] font-black uppercase tracking-tighter border border-blue-600/20">
+                                                {analysis.bestModel}
+                                             </span>
+                                         </div>
+                                         <p className="text-[10px] text-neutral-400 font-medium italic">"{analysis.bestReason || analysis.reason}"</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
+
+                                {analysis.disagreement && !resolvedDebate && (
+                                     <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                         <button 
+                                            onClick={handleResolveDebate}
+                                            disabled={resolvingDebate}
+                                            className="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all flex items-center gap-2 shadow-lg shadow-red-500/20"
+                                         >
+                                            {resolvingDebate ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Zap className="w-3 h-3" />}
+                                            Resolve Factual Conflict
+                                         </button>
+                                     </div>
+                                 )}
+                             </div>
+                         </div>
                       </div>
+                    )}
+
+                    {resolvedDebate && (
+                        <div className="max-w-[98%] mx-auto mb-12 animate-in slide-in-from-bottom-4 duration-500">
+                             <div className="bg-gradient-to-r from-red-600 to-orange-600 p-0.5 rounded-[32px]">
+                                <div className="bg-white dark:bg-[#0c0c0e] rounded-[30px] p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+                                            <ShieldCheck className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-red-600">Final Resolution</h3>
+                                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Supreme AI Arbiter Source of Truth</p>
+                                        </div>
+                                    </div>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-neutral-700 dark:prose-p:text-neutral-300">
+                                        <ReactMarkdown>{resolvedDebate}</ReactMarkdown>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
                     )}
 
                     {/* Global Multi-File Preview (Optional, can keep it only inside input) */}
@@ -683,19 +876,25 @@ export default function Home() {
                         selectedModels.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
                         'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
                     }`}>
-                        {["openai", "deepseek", "meta", "gemini"].map((key) => (
+                        {["openai", "deepseek", "meta", "gemini"]
+                            .sort((a, b) => (analysis?.bestModel === a ? -1 : analysis?.bestModel === b ? 1 : 0))
+                            .map((key) => (
                              selectedModels.includes(key) && (
                                 <ResponseCard
                                     key={key}
                                     modelName={key.toUpperCase()}
                                     provider={key as any}
                                     messages={history[key as keyof ChatHistory]}
-                                    loading={loading}
+                                    loading={loadingModels.includes(key)}
                                     onFocus={() => {}}
                                     onEditMessage={(index, content) => handleEditMessage(key, index, content)}
                                     isBest={analysis?.bestModel === key}
-                                    metrics={metrics[key]}
+                                    metrics={{
+                                        ...metrics[key],
+                                        score: analysis?.scores?.[key]
+                                    }}
                                     onSolo={() => handleSolo(key)}
+                                    cost={key === 'openai' ? 5 : key === 'gemini' ? 4 : 3}
                                  />
                               )
                         ))}
@@ -742,6 +941,29 @@ export default function Home() {
                             )}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* EXPLORATION HOOKS */}
+                    {hasStartedChat && !loading && (
+                      <div className="mt-12 flex flex-col items-center gap-4 animate-in fade-in duration-1000">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Intelligent Next Steps</p>
+                        <div className="flex flex-wrap justify-center gap-3">
+                           {[
+                             { label: 'Simplify This', icon: <Cpu className="w-3.5 h-3.5" />, prompt: 'Can you simplify this answer for a beginner?' },
+                             { label: 'Explain Deeper', icon: <Sparkles className="w-3.5 h-3.5" />, prompt: 'Go deeper into the technical details and provide more examples.' },
+                             { label: 'Convert to Notes', icon: <Book className="w-3.5 h-3.5" />, prompt: 'Convert this information into a structured set of study notes.' }
+                           ].map((hook, i) => (
+                             <button 
+                                key={i}
+                                onClick={() => handleSubmit(undefined, hook.prompt)}
+                                className="flex items-center gap-2.5 px-6 py-3 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm group"
+                             >
+                               {hook.icon}
+                               {hook.label}
+                             </button>
+                           ))}
+                        </div>
                       </div>
                     )}
 

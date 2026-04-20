@@ -12,7 +12,10 @@ const userSchema = new mongoose.Schema({
     dailyFreeCredits: { type: Number, default: 70 },
     lastResetDate: { type: Date, default: Date.now },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    subscriptionExpires: { type: Date },
+    subscriptionExpires: { Date },
+    streak: { type: Number, default: 0 },
+    lastActiveDate: { type: Date },
+    totalQueries: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -200,8 +200,16 @@ function NeuralCore() {
     setHistory({ openai: [], deepseek: [], meta: [], gemini: [] });
     setChatId(null);
     setAnalysis(null);
+    setMetrics({});
     setHasStartedChat(false);
     setCurrentTool('chat');
+    setInput("");
+    setFiles([]);
+    setImageMode(false);
+    setSearchMode(false);
+    setDebateResults({});
+    setShowDebate(false);
+    setSidebarOpen(false);
   };
 
   const deleteChat = async (id: string, e: React.MouseEvent) => {
@@ -262,18 +270,6 @@ function NeuralCore() {
     } catch (e) { console.error(e); }
   };
 
-  const startNewChat = () => {
-    setHistory({ openai: [], deepseek: [], meta: [], gemini: [] });
-    setAnalysis(null);
-    setMetrics({});
-    setHasStartedChat(false);
-    setInput("");
-    setFiles([]);
-    setImageMode(false);
-    setSearchMode(false);
-    setDebateResults({});
-    setShowDebate(false);
-  };
 
   const handleDebate = async () => {
     setDebateLoading(true);

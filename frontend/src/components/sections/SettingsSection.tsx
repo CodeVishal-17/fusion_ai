@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from 'react';
-import { Settings, Key, Shield, Eye, EyeOff, Save, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Key, Shield, Eye, EyeOff, Save, CheckCircle2, Zap, Info } from 'lucide-react';
 
 export default function SettingsSection() {
     const [keys, setKeys] = useState({
@@ -12,11 +12,32 @@ export default function SettingsSection() {
     const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchKeys();
+    }, []);
+
+    const fetchKeys = async () => {
+        try {
+            const res = await fetch('/api/v1/user/me', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            const data = await res.json();
+            if (data.apiKeys) {
+                setKeys(data.apiKeys);
+            }
+        } catch (err) {
+            console.error("Failed to fetch keys", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSave = async () => {
         setSaving(true);
         try {
-            await fetch('/api/v1/user/keys', {
+            const res = await fetch('/api/v1/user/keys', {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -24,8 +45,10 @@ export default function SettingsSection() {
                 },
                 body: JSON.stringify({ keys })
             });
-            setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
+            if (res.ok) {
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
+            }
         } catch (err) {
             console.error("Save failed", err);
         } finally {
@@ -37,6 +60,14 @@ export default function SettingsSection() {
         setShowKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
     };
 
+    if (loading) {
+        return (
+            <div className="p-8 flex items-center justify-center h-64">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
     return (
         <div className="p-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center justify-between mb-10">
@@ -47,6 +78,31 @@ export default function SettingsSection() {
             </div>
 
             <div className="space-y-8">
+                {/* Educational Card */}
+                <div className="bg-blue-600 rounded-[32px] p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                        <Zap className="w-32 h-32" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Info className="w-5 h-5" />
+                            <h3 className="text-xs font-black uppercase tracking-widest">How "Bring Your Own Key" Works</h3>
+                        </div>
+                        <h2 className="text-2xl font-black tracking-tight mb-4">Unlimited Intelligence. Zero AIFusion Credits.</h2>
+                        <p className="text-sm font-medium leading-relaxed opacity-90 max-w-2xl">
+                            When you provide your own API keys, AIFusion bypasses our shared credit pool and routes requests directly to the provider using your credentials. 
+                            <br/><br/>
+                            <span className="font-black">Benefits:</span>
+                            <ul className="list-disc list-inside mt-2 space-y-1 opacity-80 text-xs">
+                                <li>Infinite usage (limited only by your provider's quota)</li>
+                                <li>Zero deduction from your daily AIFusion credit balance</li>
+                                <li>Higher rate limits for power users</li>
+                                <li>Direct access to model tiers you pay for</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+
                 {/* BYOK Section */}
                 <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[32px] p-8">
                     <div className="flex items-center gap-3 mb-8">
@@ -54,8 +110,8 @@ export default function SettingsSection() {
                             <Key className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-black uppercase tracking-widest">Bring Your Own Key (BYOK)</h3>
-                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Your keys are encrypted and used only for your requests.</p>
+                            <h3 className="text-sm font-black uppercase tracking-widest">API Credential Manager</h3>
+                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Your keys are encrypted using industry-standard AES-256 before storage.</p>
                         </div>
                     </div>
 
@@ -72,7 +128,7 @@ export default function SettingsSection() {
                                     <input 
                                         type={showKeys[field.id] ? 'text' : 'password'}
                                         placeholder={field.placeholder}
-                                        value={(keys as any)[field.id]}
+                                        value={(keys as any)[field.id] || ''}
                                         onChange={(e) => setKeys(prev => ({ ...prev, [field.id]: e.target.value }))}
                                         className="w-full bg-neutral-50 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl px-5 py-3.5 text-xs font-mono focus:border-blue-500/50 outline-none transition-all pr-12"
                                     />
@@ -90,7 +146,7 @@ export default function SettingsSection() {
                     <div className="mt-10 pt-8 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-emerald-500">
                             <Shield className="w-4 h-4" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">AES-256 Storage Encryption</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Secure Cloud Vault Active</span>
                         </div>
                         <button 
                             onClick={handleSave}
@@ -98,7 +154,7 @@ export default function SettingsSection() {
                             className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20'}`}
                         >
                             {saving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />)}
-                            {saved ? 'Saved' : 'Save Credentials'}
+                            {saved ? 'Credentials Saved' : 'Update Credentials'}
                         </button>
                     </div>
                 </div>
@@ -124,13 +180,14 @@ export default function SettingsSection() {
                             </div>
                         </div>
                         <div className="space-y-4">
-                            <h4 className="text-[11px] font-black uppercase tracking-widest text-neutral-400 px-1">Long-Term Memory</h4>
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-neutral-400 px-1">Long-Term Memory (RAG)</h4>
                             <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
                                 <span className="text-xs font-bold">Enabled</span>
                                 <div className="w-10 h-5 bg-emerald-500 rounded-full relative">
                                     <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full" />
                                 </div>
                             </div>
+                            <p className="text-[9px] text-neutral-400 px-1">Automatically use your Knowledge Base to personalize responses.</p>
                         </div>
                     </div>
                 </div>

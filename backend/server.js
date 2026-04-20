@@ -464,6 +464,32 @@ app.post('/api/knowledge/upload', authMiddleware, multer().single('file'), async
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const doc = await processDocument(req.user._id, req.file);
+        res.json({ message: 'Document processed successfully', fileName: doc.fileName, doc });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/knowledge/list', authMiddleware, async (req, res) => {
+    try {
+        const Knowledge = require('./models/Knowledge');
+        const docs = await Knowledge.find({ userId: req.user._id }).select('-chunks');
+        res.json(docs);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/knowledge/:id', authMiddleware, async (req, res) => {
+    try {
+        const Knowledge = require('./models/Knowledge');
+        await Knowledge.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        res.json({ message: 'Document deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+        const doc = await processDocument(req.user._id, req.file);
         res.json({ message: 'Document processed successfully', fileName: doc.fileName });
     } catch (error) {
         res.status(500).json({ error: error.message });

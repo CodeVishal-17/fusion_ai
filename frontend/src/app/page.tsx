@@ -500,11 +500,9 @@ export default function Home() {
 
           <div className="mx-4 my-4 h-[1px] bg-black/5 dark:bg-white/5 flex-none" />
 
-          {currentTool === 'chat' && (
-            <button onClick={startNewChat} className="mx-4 flex items-center gap-2 px-4 py-3 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex-none">
-              <Plus className="w-4 h-4" /> New Intelligence Session
-            </button>
-          )}
+          <button onClick={() => { startNewChat(); setCurrentTool('chat'); }} className="mx-4 flex items-center gap-2 px-4 py-3 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex-none">
+            <Plus className="w-4 h-4" /> New Intelligence Session
+          </button>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-3">
             {chatHistory.length > 0 && (
               <div className="mb-4">
@@ -536,72 +534,59 @@ export default function Home() {
       </div>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {currentTool === 'knowledge' && <KnowledgeSection />}
-        {currentTool === 'analytics' && <AnalyticsSection />}
-        {currentTool === 'settings' && <SettingsSection />}
-        {currentTool === 'workflows' && (
-            <div className="flex-1 flex items-center justify-center p-20 text-center">
-                <div className="max-w-md">
-                    <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center text-violet-500 mx-auto mb-6">
-                        <Layers className="w-10 h-10" />
-                    </div>
-                    <h2 className="text-2xl font-black uppercase tracking-tightest mb-2">Workflow Builder</h2>
-                    <p className="text-sm text-neutral-500 font-medium mb-8">Chain multiple AI agents together to automate complex research and writing tasks.</p>
-                    <button className="px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20">
-                        Create First Workflow
-                    </button>
-                </div>
+        <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
+          <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+               <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
+                       <div className="flex items-center gap-5">
+                           <div className="flex flex-col items-start">
+                               <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Streak</span>
+                               <div className="flex items-center gap-1.5">
+                                   <Zap className="w-3.5 h-3.5 text-blue-500" />
+                                   <span className="text-xs font-black">{user?.streak || 0}</span>
+                               </div>
+                           </div>
+                           <div className="flex flex-col items-start pr-5 border-r border-black/5 dark:border-white/10">
+                               <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Credits</span>
+                               <div className="flex items-center gap-2">
+                                   <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                   <span className="text-xs font-black">{tokens + dailyCredits}</span>
+                                   <span className="text-[9px] font-bold text-neutral-400 opacity-60">({Math.floor((tokens + dailyCredits) / 5)} prompts)</span>
+                               </div>
+                           </div>
+                           <div className="flex flex-col items-start">
+                               <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Reset</span>
+                               <div className="flex items-center gap-1.5">
+                                   <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                                   <span className="text-[10px] font-bold font-mono opacity-60">{timeLeft}</span>
+                               </div>
+                           </div>
+                       </div>
+               </div>
             </div>
-        )}
+            
+            <div className="flex items-center gap-4 group cursor-pointer sm:absolute sm:left-1/2 sm:-translate-x-1/2" onClick={() => { setCurrentTool('chat'); setHasStartedChat(false); }}>
+               <h1 className="text-xl sm:text-2xl font-black tracking-tighter flex items-center gap-2.5">
+                  <Zap className="w-6 h-6 text-blue-600 fill-blue-600/20" />
+                  AI<span className="text-blue-600">Fusion</span>
+               </h1>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(true)} className={`p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/10 transition-all ${sidebarOpen ? 'hidden' : 'flex'}`}>
+                <PanelLeft className="w-4 h-4" />
+              </button>
+              <div className="mx-1 w-[1px] h-4 bg-black/5 dark:bg-white/10" />
+              
+              {currentTool !== 'chat' && (
+                <button onClick={() => setCurrentTool('chat')} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">
+                  <MessageSquare className="w-3.5 h-3.5" /> Back to Chat
+                </button>
+              )}
 
-        {currentTool === 'chat' && (
-          <>
-      <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
-        <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-             <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
-                     <div className="flex items-center gap-5">
-                         <div className="flex flex-col items-start">
-                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Streak</span>
-                             <div className="flex items-center gap-1.5">
-                                 <Zap className="w-3.5 h-3.5 text-blue-500" />
-                                 <span className="text-xs font-black">{user?.streak || 0}</span>
-                             </div>
-                         </div>
-                         <div className="flex flex-col items-start pr-5 border-r border-black/5 dark:border-white/10">
-                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Credits</span>
-                             <div className="flex items-center gap-2">
-                                 <Coins className="w-3.5 h-3.5 text-amber-500" />
-                                 <span className="text-xs font-black">{tokens + dailyCredits}</span>
-                                 <span className="text-[9px] font-bold text-neutral-400 opacity-60">({Math.floor((tokens + dailyCredits) / 5)} prompts)</span>
-                             </div>
-                         </div>
-                         <div className="flex flex-col items-start">
-                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Reset</span>
-                             <div className="flex items-center gap-1.5">
-                                 <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                                 <span className="text-[10px] font-bold font-mono opacity-60">{timeLeft}</span>
-                             </div>
-                         </div>
-                     </div>
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-4 group cursor-pointer sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-             <h1 className="text-xl sm:text-2xl font-black tracking-tighter flex items-center gap-2.5">
-                <Zap className="w-6 h-6 text-blue-600 fill-blue-600/20" />
-                AI<span className="text-blue-600">Fusion</span>
-             </h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className={`p-2.5 rounded-xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/10 transition-all ${sidebarOpen ? 'hidden' : 'flex'}`}>
-              <PanelLeft className="w-4 h-4" />
-            </button>
-            <div className="mx-1 w-[1px] h-4 bg-black/5 dark:bg-white/10" />
-            <button onClick={() => setShowModelRequestModal(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-violet-500/10 text-violet-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-500/20 transition-all border border-violet-500/20">
-              <Cpu className="w-3.5 h-3.5" /> Request Model
-            </button>
+              <button onClick={() => setShowModelRequestModal(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-violet-500/10 text-violet-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-500/20 transition-all border border-violet-500/20">
+                <Cpu className="w-3.5 h-3.5" /> Request Model
+              </button>
             {hasStartedChat && (
               <button onClick={startNewChat} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-neutral-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-200 dark:hover:bg-white/10 transition-all">
                 <Plus className="w-3.5 h-3.5" /> New Chat
@@ -626,7 +611,27 @@ export default function Home() {
       </header>
 
       <main className="flex-1 overflow-y-auto relative custom-scrollbar">
-          {!hasStartedChat ? (
+          {currentTool === 'knowledge' && <KnowledgeSection />}
+          {currentTool === 'analytics' && <AnalyticsSection />}
+          {currentTool === 'settings' && <SettingsSection />}
+          {currentTool === 'workflows' && (
+              <div className="flex-1 flex items-center justify-center p-20 text-center">
+                  <div className="max-w-md">
+                      <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center text-violet-500 mx-auto mb-6">
+                          <Layers className="w-10 h-10" />
+                      </div>
+                      <h2 className="text-2xl font-black uppercase tracking-tightest mb-2">Workflow Builder</h2>
+                      <p className="text-sm text-neutral-500 font-medium mb-8">Chain multiple AI agents together to automate complex research and writing tasks.</p>
+                      <button className="px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20">
+                          Create First Workflow
+                      </button>
+                  </div>
+              </div>
+          )}
+          
+          {currentTool === 'chat' && (
+            <>
+              {!hasStartedChat ? (
               <div className="min-h-full flex flex-col items-center justify-center px-6 py-12 animate-in fade-in duration-1000">
                   <div className="max-w-3xl w-full text-center">
                       <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent px-4">
@@ -1184,7 +1189,7 @@ export default function Home() {
       )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

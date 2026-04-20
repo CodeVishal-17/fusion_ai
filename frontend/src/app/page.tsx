@@ -31,7 +31,6 @@ export type ChatHistory = {
 export default function Home() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   
   const [user, setUser] = useState<any>(null);
@@ -40,64 +39,12 @@ export default function Home() {
   const [plan, setPlan] = useState<string>("free");
   const [timeLeft, setTimeLeft] = useState("");
   const [showCreditModal, setShowCreditModal] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-        router.push("/login");
-        return;
-    }
-    fetchUserData();
-    fetchChatHistory();
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const chatId = searchParams.get('chatId');
-    if (chatId && chatHistory.length > 0) {
-        const targetChat = chatHistory.find((c: any) => c._id === chatId);
-        if (targetChat) {
-            loadPreviousChat(targetChat);
-            // Clear param to avoid reloading
-            router.replace('/');
-        }
-    }
-  }, [searchParams, chatHistory]);
-
-  const fetchUserData = async () => {
-    try {
-        const res = await fetch("/api/v1/user/me", {
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-        });
-        const data = await res.json();
-        if (data.email) {
-            setUser(data);
-            setTokens(data.credits || 0);
-            setDailyCredits(data.dailyFreeCredits || 0);
-            setPlan(data.plan || "free");
-        } else {
-            router.push("/login");
-        }
-    } catch (err) {
-        console.error("Auth Error:", err);
-    }
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const diff = tomorrow.getTime() - now.getTime();
-        
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        const s = Math.floor((diff / 1000) % 60);
-        
-        setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [currentTool, setCurrentTool] = useState<'chat' | 'knowledge' | 'workflows' | 'analytics' | 'settings'>('chat');
+  
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [history, setHistory] = useState<ChatHistory>({
@@ -113,7 +60,13 @@ export default function Home() {
   const [searchMode, setSearchMode] = useState(false);
   const [smartMode, setSmartMode] = useState<string>("general");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [showModelRequestModal, setShowModelRequestModal] = useState(false);
   const [modelReqName, setModelReqName] = useState('');
   const [modelReqMsg, setModelReqMsg] = useState('');

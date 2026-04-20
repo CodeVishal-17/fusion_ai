@@ -556,7 +556,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      </div>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
@@ -662,7 +661,7 @@ export default function Home() {
                       <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tightest mb-4 bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-white dark:to-white/40 bg-clip-text text-transparent px-4">
                           Universal AI Intelligence.
                       </h2>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-6 sm:mb-8 font-medium px-6">Compare the world's most powerful models in one single interface.</p>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg mb-6 sm:mb-8 font-medium px-6">Compare the world&apos;s most powerful models in one single interface.</p>
 
 
                       <div className="flex flex-wrap items-center justify-center gap-4 mb-8">

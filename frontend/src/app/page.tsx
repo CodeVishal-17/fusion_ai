@@ -560,12 +560,14 @@ function NeuralCore() {
         </div>
         
         <div className="mt-auto p-4 border-t border-black/5 dark:border-white/5 space-y-2 flex-none">
-          <div className="flex items-center justify-between px-3 py-2">
-             <div className="flex flex-col">
-                <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">System Credit</span>
-                {(sidebarPinned || sidebarHovered) && <span className="text-xs font-black text-blue-600">{tokens + dailyCredits}</span>}
-             </div>
-             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10 hover:scale-105 transition-all">
+          <div className={`flex items-center ${ (sidebarPinned || sidebarHovered) ? 'justify-between px-3' : 'justify-center' } py-2`}>
+             {(sidebarPinned || sidebarHovered) && (
+               <div className="flex flex-col">
+                  <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">System Credit</span>
+                  <span className="text-xs font-black text-blue-600">{tokens + dailyCredits}</span>
+               </div>
+             )}
+             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2.5 rounded-xl bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10 hover:scale-110 transition-all shadow-sm">
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
              </button>
           </div>
@@ -583,7 +585,7 @@ function NeuralCore() {
       </div>
     )}
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden transition-all duration-500 ease-in-out ${ !isMobile ? ((sidebarPinned || sidebarHovered) ? 'pl-72' : 'pl-20') : '' }`}>
         <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
           <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">

@@ -1073,13 +1073,27 @@ function NeuralCore() {
                       )}
                   </div>
                   
-                  <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-white/5">
+                  <div className="p-6 border-t border-black/5 dark:border-white/5 bg-neutral-50 dark:bg-white/5 space-y-3">
                       <button 
                           onClick={() => { startNewChat(); setSidebarOpen(false); }} 
-                          className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                          className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                       >
                           + New Session
                       </button>
+                      <div className="grid grid-cols-2 gap-3">
+                          <button 
+                              onClick={() => { router.push("/profile"); setSidebarOpen(false); }}
+                              className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-neutral-100 dark:hover:bg-white/10 transition-all"
+                          >
+                              <User className="w-3.5 h-3.5" /> Profile
+                          </button>
+                          <button 
+                              onClick={() => { logout(); setSidebarOpen(false); }}
+                              className="flex items-center justify-center gap-2 py-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                          >
+                              <LogOut className="w-3.5 h-3.5" /> Logout
+                          </button>
+                      </div>
                   </div>
               </div>
           </div>

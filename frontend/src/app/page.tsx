@@ -1009,6 +1009,8 @@ export default function Home() {
                   </div>
               </div>
           )}
+            </>
+          )}
           
           {hasStartedChat && currentTool === 'chat' && (
               <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-50 via-neutral-50/90 dark:from-[#09090b] dark:via-[#09090b]/90 z-40">

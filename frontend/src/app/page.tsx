@@ -28,7 +28,7 @@ export type ChatHistory = {
   gemini: Message[];
 };
 
-export default function Home() {
+function NeuralCore() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -460,8 +460,7 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-[#fafafa] dark:bg-[#080809]"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
-      <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
+    <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
 
       {/* --- 📟 MOBILE NAVIGATION --- */}
       {isMobile && (
@@ -1082,6 +1081,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-[#fafafa] dark:bg-[#080809]"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <NeuralCore />
     </Suspense>
   );
 }

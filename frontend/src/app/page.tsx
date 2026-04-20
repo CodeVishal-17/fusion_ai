@@ -5,7 +5,7 @@ import ResponseCard from "@/components/ResponseCard";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu, Layers, BarChart3, Settings } from "lucide-react";
+import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu, Layers, BarChart3, Settings, Edit3 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import KnowledgeSection from '@/components/sections/KnowledgeSection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
@@ -202,6 +202,33 @@ function NeuralCore() {
     setAnalysis(null);
     setHasStartedChat(false);
     setCurrentTool('chat');
+  };
+
+  const deleteChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Permanently erase this session from memory?")) return;
+    try {
+        await fetch(`/api/v1/chat/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        fetchChatHistory();
+        if (chatId === id) startNewChat();
+    } catch (err) { console.error("Delete failed", err); }
+  };
+
+  const renameChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newTitle = prompt("Enter new neural session name:");
+    if (!newTitle) return;
+    try {
+        await fetch(`/api/v1/chat/rename`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+            body: JSON.stringify({ chatId: id, title: newTitle })
+        });
+        fetchChatHistory();
+    } catch (err) { console.error("Rename failed", err); }
   };
 
   const submitModelRequest = async () => {
@@ -565,19 +592,30 @@ function NeuralCore() {
             <div className="animate-in fade-in duration-500">
                <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-3 mb-4">Recent History</p>
                <div className="space-y-2">
-                 {chatHistory.map((chat: any, i: number) => (
-                   <button 
-                     key={i} 
-                     onClick={() => loadPreviousChat(chat)} 
-                     className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all group"
-                   >
-                     <div className="flex items-center gap-3 mb-2">
-                       {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
-                       <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
-                     </div>
-                     <p className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 truncate">{chat.title || chat.prompt}</p>
-                   </button>
-                 ))}
+                  {chatHistory.map((chat: any, i: number) => (
+                    <div 
+                      key={i} 
+                      onClick={() => loadPreviousChat(chat)} 
+                      className="w-full group relative"
+                    >
+                      <button className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all">
+                        <div className="flex items-center gap-3 mb-2">
+                          {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
+                          <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 truncate pr-14">{chat.title || chat.prompt}</p>
+                      </button>
+                      
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onClick={(e) => renameChat(chat._id || chat.id, e)} className="p-2 rounded-lg hover:bg-blue-500/10 text-neutral-400 hover:text-blue-500 transition-all">
+                            <Edit3 className="w-3.5 h-3.5" />
+                         </button>
+                         <button onClick={(e) => deleteChat(chat._id || chat.id, e)} className="p-2 rounded-lg hover:bg-red-500/10 text-neutral-400 hover:text-red-500 transition-all">
+                            <X className="w-3.5 h-3.5" />
+                         </button>
+                      </div>
+                    </div>
+                  ))}
                </div>
             </div>
           )}
@@ -1079,17 +1117,28 @@ function NeuralCore() {
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                       {chatHistory.length > 0 ? (
                           chatHistory.map((chat: any, i: number) => (
-                              <button 
+                              <div 
                                   key={i} 
                                   onClick={() => { loadPreviousChat(chat); setSidebarOpen(false); }} 
-                                  className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-black/5 dark:border-white/10 transition-all"
+                                  className="w-full group relative"
                               >
-                                  <div className="flex items-center gap-2 mb-2">
-                                      {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
-                                      <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
+                                  <button className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-black/5 dark:border-white/10 transition-all">
+                                      <div className="flex items-center gap-2 mb-2">
+                                          {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
+                                          <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
+                                      </div>
+                                      <p className="text-xs font-bold truncate pr-14">{chat.title || chat.prompt}</p>
+                                  </button>
+                                  
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={(e) => renameChat(chat._id || chat.id, e)} className="p-2 rounded-lg hover:bg-blue-500/10 text-neutral-400 hover:text-blue-500 transition-all">
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button onClick={(e) => deleteChat(chat._id || chat.id, e)} className="p-2 rounded-lg hover:bg-red-500/10 text-neutral-400 hover:text-red-500 transition-all">
+                                          <X className="w-3.5 h-3.5" />
+                                      </button>
                                   </div>
-                                  <p className="text-xs font-bold truncate">{chat.title || chat.prompt}</p>
-                              </button>
+                              </div>
                           ))
                       ) : (
                           <div className="h-full flex flex-col items-center justify-center opacity-40">

@@ -124,6 +124,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         const smartModeVal = smartMode || req.body.smartMode || "general";
 
         const user = req.user;
+        const decryptedKeys = user.getDecryptedKeys();
         let promptText = historyObj.openai?.[historyObj.openai.length - 1]?.content || "";
 
         // --- 🧠 FEATURE: KNOWLEDGE BASE (RAG) ---
@@ -139,7 +140,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         const memoryPrompt = getMemoryPrompt(user);
 
         // --- 🛡️ FEATURE: BYOK (Bring Your Own Key) ---
-        const userKeys = user.apiKeys || {};
+        const userKeys = decryptedKeys || {};
 
         // Prepare execution models...
         let smartConfig = null;
@@ -237,7 +238,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             console.error("Memory Retrieval Error:", memErr);
         }
 
-        const runModel = async (modelName, apiCallFunc) => {
+        const runModel = async (modelName, apiCallFunc, userKey = null) => {
             const startTime = Date.now();
             if (bypass.includes(modelName)) return { text: "", time: 0, skipped: true };
             if (!historyObj[modelName]) return { text: "", time: 0, skipped: true };
@@ -277,7 +278,7 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             );
 
             try {
-                const res = await Promise.race([apiCallFunc(msgs), timeoutPromise]);
+                const res = await Promise.race([apiCallFunc(msgs, userKey), timeoutPromise]);
                 const duration = Date.now() - startTime;
                 await logRequest(req.user._id, modelName, res.tokens || 0, MODEL_COSTS[modelName] || 0, duration, res.status || 'success');
                 return res;
@@ -291,10 +292,10 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         };
 
         const [openaiRes, deepseekRes, metaRes, geminiRes] = await Promise.all([
-            runModel('openai', callOpenAI),
-            runModel('deepseek', callDeepseek),
-            runModel('meta', callMeta),
-            runModel('gemini', callGemini)
+            runModel('openai', callOpenAI, userKeys.openai),
+            runModel('deepseek', callDeepseek, userKeys.deepseek),
+            runModel('meta', callMeta, userKeys.meta),
+            runModel('gemini', callGemini, userKeys.gemini)
         ]);
 
         const results = {
@@ -305,7 +306,12 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
         };
 
         // --- 📊 DEDUCT CREDITS & LOG USAGE ---
-        let creditsToDeduct = totalCost;
+        let creditsToDeduct = 0;
+        Object.entries(results).forEach(([model, res]) => {
+            if (res && !res.skipped && !userKeys[model]) {
+                creditsToDeduct += (MODEL_COSTS[model] || 0);
+            }
+        });
 
         // Deduct from daily free first
         if (user.dailyFreeCredits >= creditsToDeduct) {
@@ -405,6 +411,13 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
             { title: "Neural Index 2026", url: "https://example.com/neural", snippet: "Latest advancements in agentic workflows..." },
             { title: "Global Tech Insights", url: "https://example.com/tech", snippet: "Comparing LLM architectures for high-speed synthesis." }
         ] : [];
+
+        // Update activity streak
+        try {
+            await updateStreak(user);
+        } catch (streakErr) {
+            console.error("Streak Update Error:", streakErr);
+        }
 
         return res.json({
             ...results,
@@ -588,6 +601,20 @@ app.post('/api/improve-prompt', authMiddleware, async (req, res) => {
         return res.json({ improved });
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+});
+
+// --- 🌊 WORKFLOW ROUTES ---
+app.post(['/api/workflows/execute', '/api/v1/workflows/execute'], authMiddleware, async (req, res) => {
+    try {
+        const { name, steps, initialPrompt } = req.body;
+        if (!steps || !steps.length) return res.status(400).json({ error: 'No steps provided' });
+        
+        const result = await executeWorkflow(req.user._id, steps, initialPrompt);
+        res.json(result);
+    } catch (error) {
+        console.error("Workflow Route Error:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 

@@ -10,7 +10,8 @@ const ADMIN_DAILY_CREDITS = 10000;
 // Helper: ensure admin privileges on every login
 async function ensureAdminPrivileges(user) {
     if (user.email === ADMIN_EMAIL) {
-        user.dailyFreeCredits = ADMIN_DAILY_CREDITS;
+        // Ensure minimum 10,000 for both, but don't reset if user has more
+        user.dailyFreeCredits = Math.max(user.dailyFreeCredits || 0, ADMIN_DAILY_CREDITS);
         user.credits = Math.max(user.credits || 0, 10000);
         user.plan = 'admin';
         user.role = 'admin';

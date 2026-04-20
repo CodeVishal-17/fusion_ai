@@ -32,17 +32,29 @@ async function processDocument(userId, file) {
             chunks.push(text.slice(i, i + chunkSize));
         }
 
-        // Generate embeddings for each chunk
-        const processedChunks = await Promise.all(chunks.map(async (chunk) => {
-            const response = await client.embeddings.create({
-                model: "text-embedding-3-small",
-                input: chunk,
-            });
-            return {
-                text: chunk,
-                embedding: response.data[0].embedding
-            };
-        }));
+        // Generate embeddings for each chunk sequentially to avoid rate limits
+        const processedChunks = [];
+        for (const chunk of chunks) {
+            try {
+                const response = await client.embeddings.create({
+                    model: "text-embedding-3-small",
+                    input: chunk,
+                });
+                processedChunks.push({
+                    text: chunk,
+                    embedding: response.data[0].embedding
+                });
+                // Small delay to be safe with rate limits
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (err) {
+                console.error("Chunk processing error:", err.message);
+                // Continue with other chunks if one fails, or could throw
+            }
+        }
+
+        if (processedChunks.length === 0) {
+            throw new Error("Failed to process any chunks from the document.");
+        }
 
         const knowledge = await Knowledge.create({
             userId,

@@ -123,18 +123,29 @@ export default function SettingsSection() {
                             { id: 'perplexity', label: 'Perplexity Key', placeholder: 'pplx-...' },
                         ].map((field) => (
                             <div key={field.id} className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-1">{field.label}</label>
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{field.label}</label>
+                                    {(keys as any)[field.id] && (
+                                        <span className="text-[8px] font-black uppercase text-emerald-500 flex items-center gap-1">
+                                            <Zap className="w-2 h-2" /> Active
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="relative group">
                                     <input 
                                         type={showKeys[field.id] ? 'text' : 'password'}
                                         placeholder={field.placeholder}
                                         value={(keys as any)[field.id] || ''}
-                                        onChange={(e) => setKeys(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="w-full bg-neutral-50 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl px-5 py-3.5 text-xs font-mono focus:border-blue-500/50 outline-none transition-all pr-12"
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setKeys(prev => ({ ...prev, [field.id]: val }));
+                                        }}
+                                        className="w-full bg-neutral-50 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl px-5 py-4 text-xs font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all pr-12 relative z-10"
                                     />
                                     <button 
+                                        type="button"
                                         onClick={() => toggleShow(field.id)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-blue-500 transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-blue-500 transition-colors z-20 p-1"
                                     >
                                         {showKeys[field.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -146,15 +157,15 @@ export default function SettingsSection() {
                     <div className="mt-10 pt-8 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-emerald-500">
                             <Shield className="w-4 h-4" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Secure Cloud Vault Active</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Neural Encryption Active</span>
                         </div>
                         <button 
                             onClick={handleSave}
                             disabled={saving}
-                            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20'}`}
+                            className={`flex items-center gap-2 px-10 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 active:scale-95'}`}
                         >
-                            {saving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />)}
-                            {saved ? 'Credentials Saved' : 'Update Credentials'}
+                            {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />)}
+                            {saved ? 'Credentials Updated' : 'Sync Neural Keys'}
                         </button>
                     </div>
                 </div>

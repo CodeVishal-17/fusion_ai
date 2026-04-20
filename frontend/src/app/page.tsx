@@ -6,12 +6,15 @@ import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { Moon, Sun, Paperclip, X, ArrowUp, Zap, Mic, Volume2, Download, Book, Coins, LogOut, Sparkles, CreditCard, ShieldCheck, User, Clock, Plus, Image, PanelLeft, MessageSquare, HelpCircle, MessageCircle, Cpu, Layers, BarChart3, Settings } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import KnowledgeSection from '@/components/sections/KnowledgeSection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import SettingsSection from '@/components/sections/SettingsSection';
 import WorkflowSection from '@/components/sections/WorkflowSection';
 import ChatForm from '@/components/ChatForm';
+import MobileSidebar from '@/components/mobile/MobileSidebar';
+import MobileKnowledge from '@/components/mobile/MobileKnowledge';
+import MobileWorkflow from '@/components/mobile/MobileWorkflow';
 
 export type Message = {
   role: "user" | "assistant";
@@ -29,6 +32,7 @@ export default function Home() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [user, setUser] = useState<any>(null);
   const [tokens, setTokens] = useState<number>(0);
@@ -47,6 +51,18 @@ export default function Home() {
     fetchChatHistory();
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const chatId = searchParams.get('chatId');
+    if (chatId && chatHistory.length > 0) {
+        const targetChat = chatHistory.find((c: any) => c._id === chatId);
+        if (targetChat) {
+            loadPreviousChat(targetChat);
+            // Clear param to avoid reloading
+            router.replace('/');
+        }
+    }
+  }, [searchParams, chatHistory]);
 
   const fetchUserData = async () => {
     try {
@@ -111,6 +127,16 @@ export default function Home() {
   const [resolvingDebate, setResolvingDebate] = useState(false);
   const [useKnowledge, setUseKnowledge] = useState(false);
   const [optimizedPrompt, setOptimizedPrompt] = useState<string | null>(null);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [currentTool, setCurrentTool] = useState<'chat' | 'knowledge' | 'workflows' | 'analytics' | 'settings'>('chat');
   const [sources, setSources] = useState<{ title: string; url: string; snippet: string }[]>([]);
   const [userVote, setUserVote] = useState<string | null>(null);
@@ -476,89 +502,123 @@ export default function Home() {
   return (
     <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
 
-      <div className={`fixed inset-0 z-50 transition-all duration-300 ease-in-out flex ${sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-        {sidebarOpen && (
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 sm:hidden" 
-            onClick={() => setSidebarOpen(false)}
+      {/* --- 📟 MOBILE NAVIGATION --- */}
+      {isMobile && (
+          <MobileSidebar 
+              activeSection={currentTool} 
+              setActiveSection={(s: any) => setCurrentTool(s)} 
+              credits={tokens + dailyCredits} 
           />
-        )}
-        <div className={`${sidebarOpen ? 'w-72' : 'w-0'} overflow-hidden bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300`}>
-          <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-none">
-            <h2 className="text-sm font-black uppercase tracking-widest">Neural Command</h2>
-            <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5"><X className="w-4 h-4" /></button>
-          </div>
-          
-          <div className="px-4 pt-4 space-y-1 flex-none">
-            {[
-              { id: 'chat', label: 'Neural Chat', icon: <MessageSquare className="w-4 h-4" /> },
-              { id: 'knowledge', label: 'Knowledge Base', icon: <Book className="w-4 h-4" /> },
-              { id: 'workflows', label: 'AI Workflows', icon: <Layers className="w-4 h-4" /> },
-              { id: 'analytics', label: 'Usage Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-              { id: 'settings', label: 'Power Settings', icon: <Settings className="w-4 h-4" /> }
-            ].map(tool => (
-              <button 
-                key={tool.id} 
-                onClick={() => { setCurrentTool(tool.id as any); if (tool.id === 'chat') setHasStartedChat(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${currentTool === tool.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/5'}`}
-              >
-                {tool.icon}
-                {tool.label}
-              </button>
-            ))}
-          </div>
+      )}
 
-          <div className="mx-4 my-4 h-[1px] bg-black/5 dark:bg-white/5 flex-none" />
-
-          <button onClick={() => { startNewChat(); setCurrentTool('chat'); }} className="mx-4 flex items-center gap-2 px-4 py-3 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex-none">
-            <Plus className="w-4 h-4" /> New Intelligence Session
-          </button>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-3">
-            {chatHistory.length > 0 && (
-              <div className="mb-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-3 mb-2">Recent Intelligence</p>
-                <button onClick={() => loadPreviousChat(chatHistory[0])} className="w-full text-left p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10 transition-all mb-4">
-                   <div className="flex items-center gap-2 mb-1">
-                      <Zap className="w-3 h-3 text-blue-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Continue Last Session</span>
-                   </div>
-                   <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300 truncate">{chatHistory[0].title || chatHistory[0].prompt}</p>
-                </button>
-              </div>
-            )}
-
-            {chatHistory.length === 0 ? (
-              <div className="text-center py-8 text-neutral-400 text-xs">No previous chats yet</div>
-            ) : chatHistory.map((chat: any, i: number) => (
-              <button key={i} onClick={() => loadPreviousChat(chat)} className="w-full text-left p-3 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all group">
-                <div className="flex items-center gap-2 mb-1">
-                  {chat.imageMode ? <Image className="w-3 h-3 text-amber-500 flex-shrink-0" /> : <MessageSquare className="w-3 h-3 text-blue-500 flex-shrink-0" />}
-                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{chat.imageMode ? 'Autonomous Image' : 'Neural Chat'}</span>
-                </div>
-                <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 truncate">{chat.title || chat.prompt}</p>
-                <p className="text-[9px] text-neutral-400 mt-1 uppercase font-bold tracking-tighter">{new Date(chat.createdAt).toLocaleDateString()}</p>
-              </button>
-            ))}
-          </div>
-          
-          {/* Mobile Footer in Sidebar */}
-          <div className="mt-auto p-4 border-t border-black/5 dark:border-white/5 sm:hidden space-y-2">
-            <div className="flex items-center justify-between mb-4 px-2">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase text-neutral-400">Credits</span>
-                    <span className="text-sm font-black text-blue-600">{tokens + dailyCredits}</span>
-                </div>
-                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-3 rounded-2xl bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
+      {/* --- 🛠️ DYNAMIC DESKTOP SIDEBAR --- */}
+      {!isMobile && (
+        <div 
+          className={`fixed left-0 top-0 bottom-0 z-[60] flex transition-all duration-500 ease-in-out group/sidebar ${
+            (sidebarPinned || sidebarHovered) ? 'w-72' : 'w-20'
+          } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/10 shadow-2xl flex flex-col`}
+          onMouseEnter={() => setSidebarHovered(true)}
+          onMouseLeave={() => setSidebarHovered(false)}
+        >
+        <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5 flex-none">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+               <Zap className="w-5 h-5 text-white" />
             </div>
-            <button onClick={() => { router.push("/profile"); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-neutral-100 dark:bg-white/5 text-xs font-black uppercase tracking-widest transition-all">
-                <User className="w-4 h-4" /> Profile Settings
-            </button>
-            <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-500 text-xs font-black uppercase tracking-widest transition-all">
-                <LogOut className="w-4 h-4" /> Sign Out
-            </button>
+            {(sidebarPinned || sidebarHovered) && (
+              <h2 className="text-sm font-black uppercase tracking-widest animate-in fade-in slide-in-from-left-4 duration-300">Neural Core</h2>
+            )}
           </div>
+          <button 
+            onClick={() => setSidebarPinned(!sidebarPinned)} 
+            className={`p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/5 transition-all ${(sidebarPinned || sidebarHovered) ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <PanelLeft className={`w-4 h-4 ${sidebarPinned ? 'text-blue-600' : 'text-neutral-400'}`} />
+          </button>
+        </div>
+        
+        <div className="px-4 pt-6 space-y-2 flex-none">
+          {[
+            { id: 'chat', label: 'Neural Chat', icon: <MessageSquare className="w-5 h-5" /> },
+            { id: 'knowledge', label: 'Knowledge Base', icon: <Book className="w-5 h-5" /> },
+            { id: 'workflows', label: 'AI Workflows', icon: <Layers className="w-5 h-5" /> },
+            { id: 'analytics', label: 'Usage Analytics', icon: <BarChart3 className="w-5 h-5" /> },
+            { id: 'settings', label: 'Power Settings', icon: <Settings className="w-5 h-5" /> }
+          ].map(tool => (
+            <button 
+              key={tool.id} 
+              onClick={() => { setCurrentTool(tool.id as any); if (tool.id === 'chat') setHasStartedChat(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ${
+                currentTool === tool.id 
+                ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex-shrink-0">{tool.icon}</div>
+              {(sidebarPinned || sidebarHovered) && (
+                <span className="text-xs font-bold whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">{tool.label}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="mx-4 my-6 h-[1px] bg-black/5 dark:bg-white/5 flex-none" />
+
+        <div className="px-4 flex-none">
+          <button 
+            onClick={() => { startNewChat(); setCurrentTool('chat'); }} 
+            className={`flex items-center justify-center gap-3 w-full py-4 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-2xl transition-all duration-300 hover:opacity-90 active:scale-95`}
+          >
+            <Plus className="w-5 h-5" />
+            {(sidebarPinned || sidebarHovered) && (
+              <span className="text-[10px] font-black uppercase tracking-widest animate-in fade-in duration-300">New Session</span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 custom-scrollbar">
+          {(sidebarPinned || sidebarHovered) && chatHistory.length > 0 && (
+            <div className="animate-in fade-in duration-500">
+               <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-3 mb-4">Recent History</p>
+               <div className="space-y-2">
+                 {chatHistory.map((chat: any, i: number) => (
+                   <button 
+                     key={i} 
+                     onClick={() => loadPreviousChat(chat)} 
+                     className="w-full text-left p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all group"
+                   >
+                     <div className="flex items-center gap-3 mb-2">
+                       {chat.imageMode ? <Image className="w-3.5 h-3.5 text-amber-500" /> : <MessageSquare className="w-3.5 h-3.5 text-blue-500" />}
+                       <span className="text-[9px] font-black uppercase text-neutral-400">{new Date(chat.createdAt).toLocaleDateString()}</span>
+                     </div>
+                     <p className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 truncate">{chat.title || chat.prompt}</p>
+                   </button>
+                 ))}
+               </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-auto p-4 border-t border-black/5 dark:border-white/5 space-y-2 flex-none">
+          <div className="flex items-center justify-between px-3 py-2">
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">System Credit</span>
+                {(sidebarPinned || sidebarHovered) && <span className="text-xs font-black text-blue-600">{tokens + dailyCredits}</span>}
+             </div>
+             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10 hover:scale-105 transition-all">
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+             </button>
+          </div>
+          {(sidebarPinned || sidebarHovered) && (
+            <>
+              <button onClick={() => { router.push("/profile"); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-neutral-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-neutral-200">
+                  <User className="w-4 h-4" /> Account Pro
+              </button>
+              <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-red-500/20">
+                  <LogOut className="w-4 h-4" /> Exit
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -640,10 +700,10 @@ export default function Home() {
       </header>
 
       <main className="flex-1 overflow-y-auto relative custom-scrollbar">
-          {currentTool === 'knowledge' && <KnowledgeSection />}
+          {currentTool === 'knowledge' && (isMobile ? <MobileKnowledge /> : <KnowledgeSection />)}
           {currentTool === 'analytics' && <AnalyticsSection />}
           {currentTool === 'settings' && <SettingsSection />}
-          {currentTool === 'workflows' && <WorkflowSection />}
+          {currentTool === 'workflows' && (isMobile ? <MobileWorkflow /> : <WorkflowSection />)}
           
           {currentTool === 'chat' && (
             <>

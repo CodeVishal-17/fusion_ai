@@ -259,9 +259,28 @@ export default function ResponseCard({ modelName, provider, messages, loading, o
                             />
                             {imgState === 'loaded' && (
                               <div className="flex items-center gap-2 p-3 border-t border-black/5 dark:border-white/5 bg-white/80 dark:bg-black/50 backdrop-blur-sm">
-                                <a href={props.src as string} target="_blank" download className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+                                <button 
+                                  onClick={async () => {
+                                      try {
+                                          const response = await fetch(props.src as string);
+                                          const blob = await response.blob();
+                                          const url = window.URL.createObjectURL(blob);
+                                          const link = document.createElement('a');
+                                          link.href = url;
+                                          link.download = `aifusion-${Date.now()}.png`;
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                          window.URL.revokeObjectURL(url);
+                                      } catch (err) {
+                                          console.error("Download failed", err);
+                                          window.open(props.src as string, '_blank');
+                                      }
+                                  }} 
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                                >
                                   <Download className="w-3 h-3" /> Download
-                                </a>
+                                </button>
                                 <button onClick={() => { setImgState('loading'); setImgKey(k => k+1); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10 transition-all">
                                   Regenerate
                                 </button>

@@ -332,7 +332,11 @@ export default function ProfilePage() {
                             
                             <div className="space-y-4">
                                 {chatHistory.length > 0 ? chatHistory.map((chat, i) => (
-                                    <div key={chat._id} className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-all cursor-pointer group">
+                                    <div 
+                                        key={chat._id} 
+                                        onClick={() => router.push(`/?chatId=${chat._id}`)}
+                                        className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-neutral-100 dark:hover:bg-white/10 transition-all cursor-pointer group"
+                                    >
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-600">
                                                 <MessageSquare className="w-4 h-4" />

@@ -472,7 +472,13 @@ export default function Home() {
   return (
     <div className="h-screen w-full flex bg-[#fafafa] dark:bg-[#080809] text-neutral-900 dark:text-neutral-100 transition-colors duration-500 relative overflow-hidden">
 
-      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out flex`}>
+      <div className={`fixed inset-0 z-50 transition-all duration-300 ease-in-out flex ${sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        {sidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 sm:hidden" 
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <div className={`${sidebarOpen ? 'w-72' : 'w-0'} overflow-hidden bg-white dark:bg-[#0c0c0e] border-r border-black/5 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300`}>
           <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-none">
             <h2 className="text-sm font-black uppercase tracking-widest">Neural Command</h2>
@@ -529,15 +535,33 @@ export default function Home() {
                 <p className="text-[9px] text-neutral-400 mt-1 uppercase font-bold tracking-tighter">{new Date(chat.createdAt).toLocaleDateString()}</p>
               </button>
             ))}
+          
+          {/* Mobile Footer in Sidebar */}
+          <div className="mt-auto p-4 border-t border-black/5 dark:border-white/5 sm:hidden space-y-2">
+            <div className="flex items-center justify-between mb-4 px-2">
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase text-neutral-400">Credits</span>
+                    <span className="text-sm font-black text-blue-600">{tokens + dailyCredits}</span>
+                </div>
+                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-3 rounded-2xl bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+            </div>
+            <button onClick={() => { router.push("/profile"); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-neutral-100 dark:bg-white/5 text-xs font-black uppercase tracking-widest transition-all">
+                <User className="w-4 h-4" /> Profile Settings
+            </button>
+            <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/10 text-red-500 text-xs font-black uppercase tracking-widest transition-all">
+                <LogOut className="w-4 h-4" /> Sign Out
+            </button>
           </div>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="flex-none z-50 backdrop-blur-xl bg-white/70 dark:bg-black/50 border-b border-black/5 dark:border-white/5">
-          <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-               <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
+               <div className="hidden sm:flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
                        <div className="flex items-center gap-5">
                            <div className="flex flex-col items-start">
                                <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Streak</span>
@@ -1189,6 +1213,8 @@ export default function Home() {
           </>
         )}
       </main>
+    </div>
+    </div>
     </div>
     </div>
   );

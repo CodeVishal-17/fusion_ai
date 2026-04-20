@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, DollarSign, Clock, Zap, Cpu } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Clock, Zap, Cpu, Shield } from 'lucide-react';
 
 export default function AnalyticsSection() {
     const [stats, setStats] = useState<any[]>([]);

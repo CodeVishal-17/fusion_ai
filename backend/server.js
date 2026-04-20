@@ -271,9 +271,9 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 return await generateImageDALLE(prompt);
             }
 
-            // --- ⚡ TIMEOUT SYSTEM (10s) ---
+            // --- ⚡ NEURAL TIMEOUT SYSTEM (60s) ---
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+                setTimeout(() => reject(new Error('TIMEOUT')), 60000)
             );
 
             try {
@@ -283,8 +283,8 @@ app.post('/api/chat', authMiddleware, billingMiddleware, upload.any(), async (re
                 return res;
             } catch (err) {
                 if (err.message === 'TIMEOUT') {
-                    console.error(`Model ${modelName} timed out after 10s`);
-                    return { text: "Response timed out after 10s.", time: 10000, status: "error", error: "TIMEOUT" };
+                    console.error(`Model ${modelName} timed out after 60s`);
+                    return { text: "Neural Core reached 60s limit. This complex prompt requires more synthesis time. Please try a more specific query.", time: 60000, status: "error", error: "TIMEOUT" };
                 }
                 throw err;
             }

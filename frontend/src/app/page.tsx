@@ -1143,7 +1143,7 @@ export default function Home() {
                 <div className="p-10">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20"><Zap className="w-8 h-8 text-white" /></div>
-                        <div><h2 className="text-2xl font-black tracking-tight">Refuel Your AI âš¡</h2><p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p></div>
+                        <div><h2 className="text-2xl font-black tracking-tight">Refuel Your AI ⚡</h2><p className="text-neutral-500 text-sm">Choose a plan to continue your synthesis.</p></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-black/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all group">
@@ -1210,4 +1210,3 @@ export default function Home() {
     </div>
   );
 }
-

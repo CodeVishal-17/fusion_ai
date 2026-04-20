@@ -560,21 +560,30 @@ export default function Home() {
         <div className="max-w-[98%] mx-auto px-4 sm:px-6 h-auto sm:h-16 py-3 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
              <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
-                 <div className="flex items-center gap-4">
-                     <div className="flex items-center gap-2 pr-4 border-r border-black/5 dark:border-white/10">
-                         <Zap className="w-3.5 h-3.5 text-blue-500" />
-                         <span className="text-xs font-black">{user?.streak || 0}</span>
+                     <div className="flex items-center gap-5">
+                         <div className="flex flex-col items-start">
+                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Streak</span>
+                             <div className="flex items-center gap-1.5">
+                                 <Zap className="w-3.5 h-3.5 text-blue-500" />
+                                 <span className="text-xs font-black">{user?.streak || 0}</span>
+                             </div>
+                         </div>
+                         <div className="flex flex-col items-start pr-5 border-r border-black/5 dark:border-white/10">
+                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Credits</span>
+                             <div className="flex items-center gap-2">
+                                 <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                 <span className="text-xs font-black">{tokens + dailyCredits}</span>
+                                 <span className="text-[9px] font-bold text-neutral-400 opacity-60">({Math.floor((tokens + dailyCredits) / 5)} prompts)</span>
+                             </div>
+                         </div>
+                         <div className="flex flex-col items-start">
+                             <span className="text-[7px] font-black uppercase text-neutral-400 tracking-wider mb-0.5">Reset</span>
+                             <div className="flex items-center gap-1.5">
+                                 <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                                 <span className="text-[10px] font-bold font-mono opacity-60">{timeLeft}</span>
+                             </div>
+                         </div>
                      </div>
-                     <div className="flex items-center gap-2 pr-4 border-r border-black/5 dark:border-white/10">
-                         <Coins className="w-3.5 h-3.5 text-amber-500" />
-                         <span className="text-xs font-black">{tokens + dailyCredits}</span>
-                         <span className="text-[9px] font-bold text-neutral-400 opacity-60">~{Math.floor((tokens + dailyCredits) / 5)} prompts</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                         <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                         <span className="text-[10px] font-bold font-mono opacity-60">{timeLeft}</span>
-                     </div>
-                 </div>
              </div>
           </div>
           

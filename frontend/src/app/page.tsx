@@ -824,8 +824,8 @@ export default function Home() {
                         </div>
                       </div>
                   </div>
-              </div>
-          ) : (
+                  </div>
+              ) : (
               <div className="h-full overflow-y-auto custom-scrollbar px-6 py-8 pb-40">
                   <div className="max-w-[1600px] mx-auto">
                     {analysis && (
